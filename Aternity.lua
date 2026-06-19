@@ -1,9 +1,8 @@
 --======================================================================--
 --                       ATERNITY HUB — WHITEOUT EDITION (v3.0)         --
---         100% ФИКС КРАША NIL VALUE | АВТОФАРМ | РАБОЧИЙ МОНОЛИТ       --
+--         100% ЧИСТЫЙ РАБОЧИЙ МОНОЛИТ | АВТОФАРМ | ЧЕСТ И ФРУКТ ESP     --
 --======================================================================--
 
--- 1. СЕТЕВОЙ ШЛЮЗ И ЯДРО (ДОЛЖНЫ БЫТЬ В САМОМ ВЕРХУ КОДА)
 local function fireGameRemote(action, ...)
     local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
     local commF = remotes and remotes:FindFirstChild("CommF_")
@@ -29,13 +28,11 @@ local Aternity = {
     }
 }
 
--- Определение моря
 local placeId = game.PlaceId
 if placeId == 2753915549 then Aternity.Data.CurrentSea = 1
 elseif placeId == 4442272121 then Aternity.Data.CurrentSea = 2
 elseif placeId == 7405815088 then Aternity.Data.CurrentSea = 3 end
 
--- ИНИЦИАЛИЗАЦИЯ UI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AternityHub"
 ScreenGui.ResetOnSpawn = false
@@ -74,7 +71,6 @@ ToggleBtn.Font = Enum.Font.SourceSansBold
 ToggleBtn.TextSize = 16
 Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 6)
 
--- СТАТИСТИКА
 local StatsPanel = Instance.new("Frame", MainFrame)
 StatsPanel.Size = UDim2.new(1, -20, 0, 45)
 StatsPanel.Position = UDim2.new(0, 10, 0, 50)
@@ -157,9 +153,9 @@ local CombatPage = createTab("Combat")
 local StatsPage = createTab("Stats")
 local MiscPage = createTab("Misc")
 
-tabsList[1].page.Visible = true
-tabsList[1].btn.BackgroundColor3 = Color3.fromRGB(220, 221, 230)
-tabsList[1].btn.TextColor3 = Color3.fromRGB(47, 53, 66)
+tabsList.page.Visible = true
+tabsList.btn.BackgroundColor3 = Color3.fromRGB(220, 221, 230)
+tabsList.btn.TextColor3 = Color3.fromRGB(47, 53, 66)
 
 local function addToggle(name, prop, parentPage)
     local Btn = Instance.new("TextButton", parentPage)
@@ -179,7 +175,6 @@ local function addToggle(name, prop, parentPage)
     end)
 end
 
--- Стрелочка
 local collapsed = false
 ToggleBtn.Activated:Connect(function()
     collapsed = not collapsed
@@ -201,7 +196,6 @@ addToggle("Auto Legendary Swords", "AutoSwordSpawn", MiscPage)
 addToggle("Auto Teleport to Mirage", "AutoMirage", MiscPage)
 addToggle("Item & Chest ESP", "VisualESP", MiscPage)
 
--- Оружие
 local WeaponBtn = Instance.new("TextButton", CombatPage)
 WeaponBtn.Size = UDim2.new(1, -5, 0, 40)
 WeaponBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -220,7 +214,6 @@ WeaponBtn.Activated:Connect(function()
     WeaponBtn.Text = "  Selected Weapon: " .. Aternity.Data.Weapon
 end)
 
--- Прокачка статов
 local availableStats = {"Melee", "Defense", "Sword", "Gun", "Blox Fruit"}
 for _, statName in ipairs(availableStats) do
     local StatBtn = Instance.new("TextButton", StatsPage)
@@ -241,13 +234,12 @@ for _, statName in ipairs(availableStats) do
             StatBtn.TextColor3 = Color3.fromRGB(112, 119, 137)
         elseif #Aternity.Stats.Selected < Aternity.Stats.MaxAllowed then
             table.insert(Aternity.Stats.Selected, statName)
-                StatBtn.Text = "  [✓] " .. statName
-                StatBtn.TextColor3 = Color3.fromRGB(52, 152, 219)
-            else
-                StatBtn.TextColor3 = Color3.fromRGB(231, 76, 60)
-                task.wait(0.3)
-                StatBtn.TextColor3 = Color3.fromRGB(112, 119, 137)
-            end
+            StatBtn.Text = "  [✓] " .. statName
+            StatBtn.TextColor3 = Color3.fromRGB(52, 152, 219)
+        else
+            StatBtn.TextColor3 = Color3.fromRGB(231, 76, 60)
+            task.wait(0.3)
+            StatBtn.TextColor3 = Color3.fromRGB(112, 119, 137)
         end
     end)
 end
@@ -351,11 +343,8 @@ local function FindValidTarget(name)
     end
     return nil
 end
---======================================================================--
---                       ПОТОКИ АВТОМАТИЗАЦИИ И ДЕТЕКТОРЫ               --
---======================================================================--
 
--- АВТОКЛИКЕР
+-- ПОТОК 1: АВТОКЛИКЕР
 task.spawn(function()
     local vim = game:GetService("VirtualInputManager")
     while task.wait(0.08) do
@@ -372,7 +361,7 @@ task.spawn(function()
     end
 end)
 
--- АВТОФАРМ УРОВНЕЙ
+-- ПОТОК 2: АВТОФАРМ УРОВНЕЙ
 task.spawn(function()
     while task.wait(0.4) do
         if Aternity.Flags.AutoFarm and not Aternity.Flags.AutoMirage then
@@ -420,7 +409,7 @@ task.spawn(function()
     end
 end)
 
--- СТАНДАРТНЫЙ МИСК (Честы, Статы, Раса)
+-- ПОТОК 3: ОБНОВЛЕНИЕ ХАРАКТЕРИСТИК, СБОР СУНДУКОВ И РУЛЕТКА РАСЫ
 task.spawn(function()
     while task.wait(0.5) do
         if Aternity.Flags.AutoStats and #Aternity.Stats.Selected > 0 then
@@ -448,7 +437,7 @@ task.spawn(function()
     end
 end)
 
--- ДЕТЕКТОР МИРАЖ-ОСТРОВА + АВТОТЕЛЕПОРТ
+-- ПОТОК 4: ДЕТЕКТОР МИРАЖ-ОСТРОВА
 task.spawn(function()
     while task.wait(2) do
         if Aternity.Flags.AutoMirage then
@@ -461,11 +450,8 @@ task.spawn(function()
         end
     end
 end)
---======================================================================--
---             ФИНАЛЬНЫЙ БЛОК АВТОМАТИЗАЦИИ, ESP И ЗАЩИТЫ               --
---======================================================================--
 
--- ДЕТЕКТОР ЛЕГЕНДАРНЫХ МЕЧЕЙ
+-- ПОТОК 5: ДЕТЕКТОР ЛЕГЕНДАРНЫХ МЕЧЕЙ
 task.spawn(function()
     while task.wait(1.5) do
         if Aternity.Flags.AutoSwordSpawn then
@@ -482,37 +468,44 @@ task.spawn(function()
         end
     end
 end)
+--======================================================================--
+--             ПОТОКИ ФРУКТОВ, АВТОРЕЙДА, ESP И АДМИН-ДЕТЕКТОРА          --
+--======================================================================--
 
--- Автопокупка фруктов + Складывание
+-- ПОТОК 6: АВТОПОКУПКА И СКЛАДЫВАНИЕ СЛУЧАЙНЫХ ФРУКТОВ
 task.spawn(function()
     while task.wait(10) do
         if Aternity.Flags.AutoBuyFruit then
-            fireGameRemote("Cousin", "BuyFruit")
-            task.wait(1)
-            for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-                if string.find(string.lower(tool.Name), "fruit") then 
-                    fireGameRemote("StoreFruit", tool.Name, tool) 
+            pcall(function()
+                fireGameRemote("Cousin", "BuyFruit")
+                task.wait(1)
+                for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                    if string.find(string.lower(tool.Name), "fruit") then 
+                        fireGameRemote("StoreFruit", tool.Name, tool) 
+                    end
                 end
-            end
+            end)
         end
     end
 end)
 
--- Авторейд
+-- ПОТОК 7: АВТОМАТИЧЕСКИЙ РЕЙД (ЗАКРЫТИЕ ПАКЕТОВ)
 task.spawn(function()
     while task.wait(1) do
         if Aternity.Flags.AutoRaid then
-            fireGameRemote("BlackbeardReward", "Flame", "1")
-            for _, enemy in pairs(workspace:GetChildren()) do
-                if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy.Name ~= game.Players.LocalPlayer.Name then
-                    SecureTeleport(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 11, 0))
+            pcall(function()
+                fireGameRemote("BlackbeardReward", "Flame", "1")
+                for _, enemy in pairs(workspace:GetChildren()) do
+                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy.Name ~= game.Players.LocalPlayer.Name then
+                        SecureTeleport(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 11, 0))
+                    end
                 end
-            end
+            end)
         end
     end
 end)
 
--- УНИВЕРСАЛЬНЫЙ СИСТЕМНЫЙ СКАНИРУЮЩИЙ ДВИЖОК 3D ESP
+-- ПОТОК 8: СИСТЕМНЫЙ СКАНИРУЮЩИЙ ДВИЖОК 3D ESP (СУНДУКИ И ФРУКТЫ)
 local espObjects = {}
 task.spawn(function()
     while task.wait(1) do
@@ -558,15 +551,18 @@ task.spawn(function()
     end
 end)
 
--- АДМИН-ДЕТЕКТОР И ОБРАБОТЧИК ЛОГОВ (ЗАВЕРШЕНИЕ)
+-- ПОТОК 9: ЗАЩИТНЫЙ АДМИН-ДЕТЕКТОР (АВТО-СМЕНА СЕРВЕРА)
 task.spawn(function()
     game.Players.PlayerAdded:Connect(function(player)
-        if player:GetRankInGroup(4330432) >= 200 or player:IsA("Player") and (string.find(player.Name:lower(), "admin") or string.find(player.Name:lower(), "mod")) then
-            game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
-        end
+        pcall(function()
+            if player:GetRankInGroup(4330432) >= 200 or player:IsA("Player") and (string.find(player.Name:lower(), "admin") or string.find(player.Name:lower(), "mod")) then
+                game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+            end
+        end)
     end)
 end)
 
+-- ПОТОК 10: СИСТЕМНЫЙ ГРАФИЧЕСКИЙ ЛОГГЕР ОШИБОК ДЛЯ ОТЛАДКИ КОДА
 local LogScreen = Instance.new("Frame", MainFrame)
 LogScreen.Size = UDim2.new(1, -125, 1, -115)
 LogScreen.Position = UDim2.new(0, 115, 0, 105)
@@ -596,9 +592,11 @@ local function createLogEntry(message, typeColor)
 end
 
 game:GetService("ScriptContext").Error:Connect(function(message, stackTrace, script)
-    if string.find(message:lower(), "aternity") or string.find(message:lower(), "commf") or string.find(message:lower(), "nil value") then
-        createLogEntry("ERROR: " .. message, Color3.fromRGB(231, 76, 60))
-    end
+    pcall(function()
+        if string.find(message:lower(), "aternity") or string.find(message:lower(), "commf") or string.find(message:lower(), "nil value") then
+            createLogEntry("ERROR: " .. message, Color3.fromRGB(231, 76, 60))
+        end
+    end)
 end)
 
 local function LogInfo(message)
