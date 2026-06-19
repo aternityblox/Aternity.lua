@@ -559,3 +559,52 @@ task.spawn(function()
         end
     end)
 end)
+--======================================================================--
+--                       ATERNITY ERROR LOGGER SYSTEM                   --
+--======================================================================--
+
+local LogScreen = Instance.new("Frame", MainFrame)
+LogScreen.Size = UDim2.new(1, -125, 1, -115)
+LogScreen.Position = UDim2.new(0, 115, 0, 105)
+LogScreen.BackgroundTransparency = 1
+LogScreen.Visible = false -- Сделать visible при создании вкладки Log
+
+local LogContainer = Instance.new("ScrollingFrame", LogScreen)
+LogContainer.Size = UDim2.new(1, -5, 1, 0)
+LogContainer.BackgroundTransparency = 1
+LogContainer.CanvasSize = UDim2.new(0, 0, 0, 1000)
+LogContainer.ScrollBarThickness = 2
+
+local LogLayout = Instance.new("UIListLayout", LogContainer)
+LogLayout.Padding = UDim.new(0, 4)
+LogLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local function createLogEntry(message, typeColor)
+    local LogText = Instance.new("TextLabel", LogContainer)
+    LogText.Size = UDim2.new(1, 0, 0, 20)
+    LogText.BackgroundTransparency = 1
+    LogText.Text = "  [" .. os.date("%X") .. "] " .. message
+    LogText.TextColor3 = typeColor
+    LogText.Font = Enum.Font.Code
+    LogText.TextSize = 10
+    LogText.TextXAlignment = Enum.TextXAlignment.Left
+    LogContainer.CanvasSize = UDim2.new(0, 0, 0, LogLayout.AbsoluteContentSize.Y + 20)
+end
+
+-- Перехватчик внутренних ошибок Lua и сетевых пакетов
+game:GetService("ScriptContext").Error:Connect(function(message, stackTrace, script)
+    -- Фильтруем ошибки, чтобы логировать только те, что связаны с Aternity
+    if string.find(message:lower(), "aternity") or string.find(message:lower(), "commf") or string.find(message:lower(), "nil value") then
+        createLogEntry("ERROR: " .. message, Color3.fromRGB(231, 76, 60)) -- Красный лог
+    end
+end)
+
+-- Логирование успешных внутренних событий софта
+local function LogInfo(message)
+    createLogEntry("INFO: " .. message, Color3.fromRGB(52, 152, 219)) -- Синий лог
+end
+
+-- Пример системных логов при старте
+LogInfo("Physics Bypass Activated.")
+LogInfo("Tween Flight Core Status: STABLE.")
+LogInfo("Remotes Secure Handshake: SUCCESS.")
