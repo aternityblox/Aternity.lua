@@ -267,7 +267,6 @@ local SeaMobData = {
         {MinLvl = 2800, Name = "Aternity Abyss Slayer", QuestNPC = "Abyss Quest Giver", Quest = "AbyssQuest", QuestID = 1}
     }
 }
-
 local function GetMyTargetMob()
     local player = game.Players.LocalPlayer
     local myLevel = player.Data.Level.Value
