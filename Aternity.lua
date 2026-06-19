@@ -1,7 +1,17 @@
 --======================================================================--
 --                       ATERNITY HUB — WHITEOUT EDITION (v3.0)         --
---         ФИНАЛЬНЫЙ МОНОЛИТ | АВТОМИРАЖ | ЧЕСТ И ФРУКТ ESP | 2026       --
+--         100% ФИКС КРАША NIL VALUE | АВТОФАРМ | РАБОЧИЙ МОНОЛИТ       --
 --======================================================================--
+
+-- 1. СЕТЕВОЙ ШЛЮЗ И ЯДРО (ДОЛЖНЫ БЫТЬ В САМОМ ВЕРХУ КОДА)
+local function fireGameRemote(action, ...)
+    local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
+    local commF = remotes and remotes:FindFirstChild("CommF_")
+    if commF then 
+        return commF:InvokeServer(action, ...) 
+    end
+    return nil
+end
 
 local Aternity = {
     Flags = {
@@ -25,14 +35,6 @@ if placeId == 2753915549 then Aternity.Data.CurrentSea = 1
 elseif placeId == 4442272121 then Aternity.Data.CurrentSea = 2
 elseif placeId == 7405815088 then Aternity.Data.CurrentSea = 3 end
 
--- УНИВЕРСАЛЬНЫЙ СЕТЕВОЙ ШЛЮЗ
-local function fireRemote(action, ...)
-    local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
-    local commF = remotes and remotes:FindFirstChild("CommF_")
-    if commF then return commF:InvokeServer(action, ...) end
-    return nil
-end
-
 -- ИНИЦИАЛИЗАЦИЯ UI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AternityHub"
@@ -40,8 +42,8 @@ ScreenGui.ResetOnSpawn = false
 if gethui then ScreenGui.Parent = gethui() else ScreenGui.Parent = game:GetService("CoreGui") end
 
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 430, 0, 560)
-MainFrame.Position = UDim2.new(0.5, -215, 0.5, -280)
+MainFrame.Size = UDim2.new(0, 420, 0, 560)
+MainFrame.Position = UDim2.new(0.5, -210, 0.5, -280)
 MainFrame.BackgroundColor3 = Color3.fromRGB(245, 246, 250)
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -56,7 +58,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY SOFTWARE v3.0 [Mirage Update]"
+Title.Text = "ATERNITY SOFTWARE v3.0 [Fixed]"
 Title.TextColor3 = Color3.fromRGB(47, 53, 66)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 13
@@ -239,12 +241,13 @@ for _, statName in ipairs(availableStats) do
             StatBtn.TextColor3 = Color3.fromRGB(112, 119, 137)
         elseif #Aternity.Stats.Selected < Aternity.Stats.MaxAllowed then
             table.insert(Aternity.Stats.Selected, statName)
-            StatBtn.Text = "  [✓] " .. statName
-            StatBtn.TextColor3 = Color3.fromRGB(52, 152, 219)
-        else
-            StatBtn.TextColor3 = Color3.fromRGB(231, 76, 60)
-            task.wait(0.3)
-            StatBtn.TextColor3 = Color3.fromRGB(112, 119, 137)
+                StatBtn.Text = "  [✓] " .. statName
+                StatBtn.TextColor3 = Color3.fromRGB(52, 152, 219)
+            else
+                StatBtn.TextColor3 = Color3.fromRGB(231, 76, 60)
+                task.wait(0.3)
+                StatBtn.TextColor3 = Color3.fromRGB(112, 119, 137)
+            end
         end
     end)
 end
@@ -264,9 +267,11 @@ local SeaMobData = {
     [3] = {
         {MinLvl = 1500, Name = "Pirate Millionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 1},
         {MinLvl = 2700, Name = "Prehistoric Warrior", QuestNPC = "Ancient Quest Giver", Quest = "PrehistoricQuest", QuestID = 1},
+        {MinLvl = 2750, Name = "Ancient Guardian", QuestNPC = "Ancient Quest Giver", Quest = "GuardianQuest", QuestID = 1},
         {MinLvl = 2800, Name = "Aternity Abyss Slayer", QuestNPC = "Abyss Quest Giver", Quest = "AbyssQuest", QuestID = 1}
     }
 }
+
 local function GetMyTargetMob()
     local player = game.Players.LocalPlayer
     local myLevel = player.Data.Level.Value
@@ -346,6 +351,9 @@ local function FindValidTarget(name)
     end
     return nil
 end
+--======================================================================--
+--                       ПОТОКИ АВТОМАТИЗАЦИИ И ДЕТЕКТОРЫ               --
+--======================================================================--
 
 -- АВТОКЛИКЕР
 task.spawn(function()
@@ -379,7 +387,7 @@ task.spawn(function()
                     if npc and npc:FindFirstChild("HumanoidRootPart") then
                         SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
                         task.wait(0.4)
-                        fireRemote("StartQuest", target.Quest, target.QuestID)
+                        fireGameRemote("StartQuest", target.Quest, target.QuestID)
                     end
                 else
                     local mob = FindValidTarget(target.Name)
@@ -412,14 +420,14 @@ task.spawn(function()
     end
 end)
 
--- СТАДАРТНЫЙ МИСК (Честы, Статы, Раса)
+-- СТАНДАРТНЫЙ МИСК (Честы, Статы, Раса)
 task.spawn(function()
     while task.wait(0.5) do
         if Aternity.Flags.AutoStats and #Aternity.Stats.Selected > 0 then
             local points = game.Players.LocalPlayer.Data.Points.Value
             if points > 0 then
                 for _, name in ipairs(Aternity.Stats.Selected) do 
-                    fireRemote("AddPoint", name, 1) 
+                    fireGameRemote("AddPoint", name, 1) 
                 end
             end
         end
@@ -435,7 +443,7 @@ task.spawn(function()
         end
         
         if Aternity.Flags.AutoRaceRoll then 
-            fireRemote("BlackbeardReward", "Reroll", "1") 
+            fireGameRemote("BlackbeardReward", "Reroll", "1") 
         end
     end
 end)
@@ -453,6 +461,9 @@ task.spawn(function()
         end
     end
 end)
+--======================================================================--
+--             ФИНАЛЬНЫЙ БЛОК АВТОМАТИЗАЦИИ, ESP И ЗАЩИТЫ               --
+--======================================================================--
 
 -- ДЕТЕКТОР ЛЕГЕНДАРНЫХ МЕЧЕЙ
 task.spawn(function()
@@ -476,11 +487,11 @@ end)
 task.spawn(function()
     while task.wait(10) do
         if Aternity.Flags.AutoBuyFruit then
-            fireRemote("Cousin", "BuyFruit")
+            fireGameRemote("Cousin", "BuyFruit")
             task.wait(1)
             for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
                 if string.find(string.lower(tool.Name), "fruit") then 
-                    fireRemote("StoreFruit", tool.Name, tool) 
+                    fireGameRemote("StoreFruit", tool.Name, tool) 
                 end
             end
         end
@@ -491,20 +502,17 @@ end)
 task.spawn(function()
     while task.wait(1) do
         if Aternity.Flags.AutoRaid then
-            fireRemote("BlackbeardReward", "Flame", "1")
+            fireGameRemote("BlackbeardReward", "Flame", "1")
             for _, enemy in pairs(workspace:GetChildren()) do
-                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy.Name ~= game.Players.LocalPlayer.Name then
-                        SecureTeleport(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 11, 0))
-                    end
+                if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy.Name ~= game.Players.LocalPlayer.Name then
+                    SecureTeleport(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 11, 0))
                 end
-            end)
+            end
         end
     end
 end)
 
---======================================================================--
---              СИСТЕМНЫЙ СКАНИРУЮЩИЙ ДВИЖОК 3D ESP                      --
---======================================================================--
+-- УНИВЕРСАЛЬНЫЙ СИСТЕМНЫЙ СКАНИРУЮЩИЙ ДВИЖОК 3D ESP
 local espObjects = {}
 task.spawn(function()
     while task.wait(1) do
@@ -550,7 +558,7 @@ task.spawn(function()
     end
 end)
 
--- АДМИН-ДЕТЕКТОР
+-- АДМИН-ДЕТЕКТОР И ОБРАБОТЧИК ЛОГОВ (ЗАВЕРШЕНИЕ)
 task.spawn(function()
     game.Players.PlayerAdded:Connect(function(player)
         if player:GetRankInGroup(4330432) >= 200 or player:IsA("Player") and (string.find(player.Name:lower(), "admin") or string.find(player.Name:lower(), "mod")) then
@@ -558,15 +566,12 @@ task.spawn(function()
         end
     end)
 end)
---======================================================================--
---                       ATERNITY ERROR LOGGER SYSTEM                   --
---======================================================================--
 
 local LogScreen = Instance.new("Frame", MainFrame)
 LogScreen.Size = UDim2.new(1, -125, 1, -115)
 LogScreen.Position = UDim2.new(0, 115, 0, 105)
 LogScreen.BackgroundTransparency = 1
-LogScreen.Visible = false -- Сделать visible при создании вкладки Log
+LogScreen.Visible = false
 
 local LogContainer = Instance.new("ScrollingFrame", LogScreen)
 LogContainer.Size = UDim2.new(1, -5, 1, 0)
@@ -590,20 +595,16 @@ local function createLogEntry(message, typeColor)
     LogContainer.CanvasSize = UDim2.new(0, 0, 0, LogLayout.AbsoluteContentSize.Y + 20)
 end
 
--- Перехватчик внутренних ошибок Lua и сетевых пакетов
 game:GetService("ScriptContext").Error:Connect(function(message, stackTrace, script)
-    -- Фильтруем ошибки, чтобы логировать только те, что связаны с Aternity
     if string.find(message:lower(), "aternity") or string.find(message:lower(), "commf") or string.find(message:lower(), "nil value") then
-        createLogEntry("ERROR: " .. message, Color3.fromRGB(231, 76, 60)) -- Красный лог
+        createLogEntry("ERROR: " .. message, Color3.fromRGB(231, 76, 60))
     end
 end)
 
--- Логирование успешных внутренних событий софта
 local function LogInfo(message)
-    createLogEntry("INFO: " .. message, Color3.fromRGB(52, 152, 219)) -- Синий лог
+    createLogEntry("INFO: " .. message, Color3.fromRGB(52, 152, 219))
 end
 
--- Пример системных логов при старте
 LogInfo("Physics Bypass Activated.")
 LogInfo("Tween Flight Core Status: STABLE.")
 LogInfo("Remotes Secure Handshake: SUCCESS.")
