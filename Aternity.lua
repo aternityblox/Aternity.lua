@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — WHITEOUT EDITION (v3.0)         --
---         100% ЧИСТЫЙ РАБОЧИЙ МОНОЛИТ | АВТОФАРМ | ЧЕСТ И ФРУКТ ESP     --
+--                       ATERNITY HUB — SPACE & WHITEOUT EDITION (v3.0)  --
+--         100% ФИКС UI | КОСМИЧЕСКИЕ ТЕМЫ | СТЯГИВАНИЕ | ESP | 2026     --
 --======================================================================--
 
 local function fireGameRemote(action, ...)
@@ -24,7 +24,8 @@ local Aternity = {
         MaxLevel = 2800, CurrentSea = 1, FlightSpeed = 350,
         StartLevel = game.Players.LocalPlayer.Data.Level.Value,
         StartBeli = game.Players.LocalPlayer.Data.Beli.Value,
-        Weapon = "Blox Fruit"
+        Weapon = "Blox Fruit",
+        CurrentTheme = "Whiteout" -- Тема по умолчанию
     }
 }
 
@@ -46,16 +47,23 @@ MainFrame.Active = true
 MainFrame.Draggable = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
 
+-- Элемент для космического бэкграунда (Звезды)
+local SpaceBackground = Instance.new("Frame", MainFrame)
+SpaceBackground.Size = UDim2.new(1, 0, 1, 0)
+SpaceBackground.BackgroundTransparency = 1
+SpaceBackground.ZIndex = 1
+
 local Header = Instance.new("Frame", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 40)
 Header.BackgroundColor3 = Color3.fromRGB(220, 221, 230)
+Header.ZIndex = 3
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
 
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY SOFTWARE v3.0 [Fixed]"
+Title.Text = "ATERNITY SOFTWARE v3.0 [Theme Update]"
 Title.TextColor3 = Color3.fromRGB(47, 53, 66)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 13
@@ -69,12 +77,14 @@ ToggleBtn.Text = "▲"
 ToggleBtn.TextColor3 = Color3.fromRGB(47, 53, 66)
 ToggleBtn.Font = Enum.Font.SourceSansBold
 ToggleBtn.TextSize = 16
+ToggleBtn.ZIndex = 4
 Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 6)
 
 local StatsPanel = Instance.new("Frame", MainFrame)
 StatsPanel.Size = UDim2.new(1, -20, 0, 45)
 StatsPanel.Position = UDim2.new(0, 10, 0, 50)
 StatsPanel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+StatsPanel.ZIndex = 3
 Instance.new("UICorner", StatsPanel).CornerRadius = UDim.new(0, 8)
 
 local LevelLog = Instance.new("TextLabel", StatsPanel)
@@ -108,12 +118,14 @@ local TabBar = Instance.new("Frame", MainFrame)
 TabBar.Size = UDim2.new(0, 100, 1, -115)
 TabBar.Position = UDim2.new(0, 10, 0, 105)
 TabBar.BackgroundTransparency = 1
+TabBar.ZIndex = 3
 Instance.new("UIListLayout", TabBar).Padding = UDim.new(0, 6)
 
 local PagesContainer = Instance.new("Frame", MainFrame)
 PagesContainer.Size = UDim2.new(1, -125, 1, -115)
 PagesContainer.Position = UDim2.new(0, 115, 0, 105)
 PagesContainer.BackgroundTransparency = 1
+PagesContainer.ZIndex = 3
 
 local tabsList = {}
 local function createTab(tabName)
@@ -123,7 +135,10 @@ local function createTab(tabName)
     TabPage.Visible = false
     TabPage.CanvasSize = UDim2.new(0, 0, 0, 520)
     TabPage.ScrollBarThickness = 0
-    Instance.new("UIListLayout", TabPage).Padding = UDim.new(0, 8)
+    TabPage.ZIndex = 3
+    local layout = Instance.new("UIListLayout", TabPage)
+    layout.Padding = UDim.new(0, 8)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
     
     local TabButton = Instance.new("TextButton", TabBar)
     TabButton.Size = UDim2.new(1, 0, 0, 35)
@@ -132,17 +147,18 @@ local function createTab(tabName)
     TabButton.TextColor3 = Color3.fromRGB(112, 119, 137)
     TabButton.Font = Enum.Font.GothamSemibold
     TabButton.TextSize = 11
+    TabButton.ZIndex = 3
     Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 6)
     
     TabButton.Activated:Connect(function()
         for _, tab in pairs(tabsList) do
             tab.page.Visible = false
-            tab.btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            tab.btn.TextColor3 = Color3.fromRGB(112, 119, 137)
+            tab.btn.BackgroundColor3 = Aternity.Data.CurrentTheme == "Space" and Color3.fromRGB(20, 24, 35) or Color3.fromRGB(255, 255, 255)
+            tab.btn.TextColor3 = Aternity.Data.CurrentTheme == "Space" and Color3.fromRGB(170, 180, 200) or Color3.fromRGB(112, 119, 137)
         end
         TabPage.Visible = true
-        TabButton.BackgroundColor3 = Color3.fromRGB(220, 221, 230)
-        TabButton.TextColor3 = Color3.fromRGB(47, 53, 66)
+        TabButton.BackgroundColor3 = Aternity.Data.CurrentTheme == "Space" and Color3.fromRGB(35, 45, 65) or Color3.fromRGB(220, 221, 230)
+        TabButton.TextColor3 = Aternity.Data.CurrentTheme == "Space" and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(47, 53, 66)
     end)
     table.insert(tabsList, {page = TabPage, btn = TabButton})
     return TabPage
@@ -153,10 +169,6 @@ local CombatPage = createTab("Combat")
 local StatsPage = createTab("Stats")
 local MiscPage = createTab("Misc")
 
-tabsList.page.Visible = true
-tabsList.btn.BackgroundColor3 = Color3.fromRGB(220, 221, 230)
-tabsList.btn.TextColor3 = Color3.fromRGB(47, 53, 66)
-
 local function addToggle(name, prop, parentPage)
     local Btn = Instance.new("TextButton", parentPage)
     Btn.Size = UDim2.new(1, -5, 0, 40)
@@ -166,6 +178,7 @@ local function addToggle(name, prop, parentPage)
     Btn.Font = Enum.Font.GothamSemibold
     Btn.TextSize = 11
     Btn.TextXAlignment = Enum.TextXAlignment.Left
+    Btn.ZIndex = 3
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
     
     Btn.Activated:Connect(function()
@@ -173,17 +186,8 @@ local function addToggle(name, prop, parentPage)
         Btn.Text = Aternity.Flags[prop] and "  " .. name .. ": ON" or "  " .. name .. ": OFF"
         Btn.TextColor3 = Aternity.Flags[prop] and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(112, 119, 137)
     end)
+    return Btn
 end
-
-local collapsed = false
-ToggleBtn.Activated:Connect(function()
-    collapsed = not collapsed
-    MainFrame:TweenSize(collapsed and UDim2.new(0, 420, 0, 40) or UDim2.new(0, 420, 0, 560), "Out", "Quart", 0.25, true)
-    PagesContainer.Visible = not collapsed
-    TabBar.Visible = not collapsed
-    StatsPanel.Visible = not collapsed
-    ToggleBtn.Text = collapsed and "▼" or "▲"
-end)
 
 addToggle("Auto Farm Levels", "AutoFarm", FarmPage)
 addToggle("Auto Clicker / Attack", "AutoClicker", CombatPage)
@@ -196,6 +200,109 @@ addToggle("Auto Legendary Swords", "AutoSwordSpawn", MiscPage)
 addToggle("Auto Teleport to Mirage", "AutoMirage", MiscPage)
 addToggle("Item & Chest ESP", "VisualESP", MiscPage)
 
+-- КНОПКА СМЕНЫ ТЕМ ОФОРМЛЕНИЯ (Новинка на Misc)
+local ThemeBtn = Instance.new("TextButton", MiscPage)
+ThemeBtn.Size = UDim2.new(1, -5, 0, 40)
+ThemeBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ThemeBtn.Text = "  Theme Mode: Whiteout"
+ThemeBtn.TextColor3 = Color3.fromRGB(47, 53, 66)
+ThemeBtn.Font = Enum.Font.GothamSemibold
+ThemeBtn.TextSize = 11
+ThemeBtn.TextXAlignment = Enum.TextXAlignment.Left
+ThemeBtn.ZIndex = 3
+Instance.new("UICorner", ThemeBtn).CornerRadius = UDim.new(0, 8)
+
+-- Функция генерации мерцающих звезд
+local function clearStars() SpaceBackground:ClearAllChildren() end
+local function spawnSpaceStars()
+    clearStars()
+    for i = 1, 45 do
+        local star = Instance.new("TextLabel", SpaceBackground)
+        star.BackgroundTransparency = 1
+        star.Size = UDim2.new(0, 10, 0, 10)
+        star.Position = UDim2.new(math.random(), 0, math.random(), 0)
+        star.Text = "✦"
+        star.TextColor3 = Color3.fromRGB(255, 255, math.random(150, 255))
+        star.TextSize = math.random(6, 11)
+        star.ZIndex = 2
+        
+        -- Анимация мерцания через треды
+        task.spawn(function()
+            while Aternity.Data.CurrentTheme == "Space" and MainFrame.Parent do
+                star.TextTransparency = 0.3 + math.sin(tick() * math.random(2, 5)) * 0.4
+                task.wait(0.1)
+            end
+        end)
+    end
+end
+
+ThemeBtn.Activated:Connect(function()
+    if Aternity.Data.CurrentTheme == "Whiteout" then
+        Aternity.Data.CurrentTheme = "Space"
+        ThemeBtn.Text = "  Theme Mode: Space Engine"
+        
+        -- Перекрашиваем весь софт в космический стиль
+        -- Смена стилей на Космическую тему
+        MainFrame.BackgroundColor3 = Color3.fromRGB(10, 12, 18)
+        Header.BackgroundColor3 = Color3.fromRGB(20, 25, 38)
+        Title.TextColor3 = Color3.fromRGB(0, 255, 200)
+        StatsPanel.BackgroundColor3 = Color3.fromRGB(18, 22, 32)
+        LevelLog.TextColor3 = Color3.fromRGB(200, 210, 230)
+        ThemeBtn.BackgroundColor3 = Color3.fromRGB(22, 28, 40)
+        ThemeBtn.TextColor3 = Color3.fromRGB(0, 255, 200)
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(22, 28, 40)
+        ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        
+        for _, element in pairs(PagesContainer:GetDescendants()) do
+            if element:IsA("TextButton") and element ~= ThemeBtn then
+                element.BackgroundColor3 = Color3.fromRGB(22, 28, 40)
+                if not string.find(element.Text, "ON") then 
+                    element.TextColor3 = Color3.fromRGB(150, 160, 180) 
+                end
+            elseif element:IsA("TextLabel") then
+                element.TextColor3 = Color3.fromRGB(200, 210, 230)
+            end
+        end
+        
+        for _, t in pairs(tabsList) do
+            t.btn.BackgroundColor3 = Color3.fromRGB(22, 28, 40)
+            t.btn.TextColor3 = Color3.fromRGB(150, 160, 180)
+        end
+        spawnSpaceStars()
+    else
+        Aternity.Data.CurrentTheme = "Whiteout"
+        ThemeBtn.Text = "  Theme Mode: Whiteout"
+        clearStars()
+        
+        -- Возвращаем чистый светлый стиль
+        MainFrame.BackgroundColor3 = Color3.fromRGB(245, 246, 250)
+        Header.BackgroundColor3 = Color3.fromRGB(220, 221, 230)
+        Title.TextColor3 = Color3.fromRGB(47, 53, 66)
+        StatsPanel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        LevelLog.TextColor3 = Color3.fromRGB(47, 53, 66)
+        ThemeBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        ThemeBtn.TextColor3 = Color3.fromRGB(47, 53, 66)
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        ToggleBtn.TextColor3 = Color3.fromRGB(47, 53, 66)
+        
+        for _, element in pairs(PagesContainer:GetDescendants()) do
+            if element:IsA("TextButton") and element ~= ThemeBtn then
+                element.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                if not string.find(element.Text, "ON") then 
+                    element.TextColor3 = Color3.fromRGB(112, 119, 137) 
+                end
+            elseif element:IsA("TextLabel") then
+                element.TextColor3 = Color3.fromRGB(47, 53, 66)
+            end
+        end
+        
+        for _, t in pairs(tabsList) do
+            t.btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            t.btn.TextColor3 = Color3.fromRGB(112, 119, 137)
+        end
+    end
+end)
+
 local WeaponBtn = Instance.new("TextButton", CombatPage)
 WeaponBtn.Size = UDim2.new(1, -5, 0, 40)
 WeaponBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -204,6 +311,7 @@ WeaponBtn.TextColor3 = Color3.fromRGB(47, 53, 66)
 WeaponBtn.Font = Enum.Font.GothamSemibold
 WeaponBtn.TextSize = 11
 WeaponBtn.TextXAlignment = Enum.TextXAlignment.Left
+WeaponBtn.ZIndex = 3
 Instance.new("UICorner", WeaponBtn).CornerRadius = UDim.new(0, 8)
 
 local weapons = {"Combat", "Melee", "Sword", "Blox Fruit"}
@@ -224,6 +332,7 @@ for _, statName in ipairs(availableStats) do
     StatBtn.Font = Enum.Font.GothamSemibold
     StatBtn.TextSize = 11
     StatBtn.TextXAlignment = Enum.TextXAlignment.Left
+    StatBtn.ZIndex = 3
     Instance.new("UICorner", StatBtn).CornerRadius = UDim.new(0, 6)
     
     StatBtn.Activated:Connect(function()
@@ -244,6 +353,28 @@ for _, statName in ipairs(availableStats) do
     end)
 end
 
+tabsList[1].page.Visible = true
+tabsList[1].btn.BackgroundColor3 = Color3.fromRGB(220, 221, 230)
+tabsList[1].btn.TextColor3 = Color3.fromRGB(47, 53, 66)
+
+local collapsed = false
+ToggleBtn.Activated:Connect(function()
+    collapsed = not collapsed
+    if collapsed then
+        MainFrame:TweenSize(UDim2.new(0, 430, 0, 40), "Out", "Quart", 0.2, true)
+        PagesContainer.Visible = false
+        TabBar.Visible = false
+        StatsPanel.Visible = false
+        ToggleBtn.Text = "▼"
+    else
+        MainFrame:TweenSize(UDim2.new(0, 430, 0, 560), "Out", "Quart", 0.2, true)
+        task.wait(0.15)
+        PagesContainer.Visible = true
+        TabBar.Visible = true
+        StatsPanel.Visible = true
+        ToggleBtn.Text = "▲"
+    end
+end)
 --======================================================================--
 --                             ДВИЖОК СКРИПТА                           --
 --======================================================================--
@@ -269,7 +400,6 @@ local function GetMyTargetMob()
     local myLevel = player.Data.Level.Value
     local currentSeaData = SeaMobData[Aternity.Data.CurrentSea] or SeaMobData[1]
     local target = currentSeaData[1]
-    
     for _, mob in ipairs(currentSeaData) do
         if myLevel >= mob.MinLvl and mob.MinLvl >= target.MinLvl then 
             target = mob 
@@ -284,19 +414,15 @@ local function SecureTeleport(targetCFrame)
         local root = character and character:FindFirstChild("HumanoidRootPart")
         local humanoid = character and character:FindFirstChild("Humanoid")
         if not root then return end
-        
         local dist = (root.Position - targetCFrame.Position).Magnitude
         if dist < 40 then
             root.CFrame = targetCFrame
         else
             if humanoid then humanoid.PlatformStand = true end
             root.Velocity = Vector3.new(0, 0, 0)
-            
             local steps = dist / (Aternity.Data.FlightSpeed * 0.03)
             for i = 1, steps do
-                if not Aternity.Flags.AutoFarm and not Aternity.Flags.AutoChest and not Aternity.Flags.AutoRaid and not Aternity.Flags.AutoSwordSpawn and not Aternity.Flags.AutoMirage then 
-                    break 
-                end
+                if not Aternity.Flags.AutoFarm and not Aternity.Flags.AutoChest and not Aternity.Flags.AutoRaid and not Aternity.Flags.AutoSwordSpawn and not Aternity.Flags.AutoMirage then break end
                 root.CFrame = root.CFrame:Lerp(targetCFrame, i / steps)
                 task.wait()
             end
@@ -310,13 +436,9 @@ local function EquipWeapon()
         local player = game.Players.LocalPlayer
         local character = player.Character
         if not character or not character:FindFirstChild("Humanoid") then return end
-        
         for _, tool in pairs(character:GetChildren()) do
-            if tool:IsA("Tool") and (tool.Name == Aternity.Data.Weapon or tool.ToolTip == Aternity.Data.Weapon) then 
-                return 
-            end
+            if tool:IsA("Tool") and (tool.Name == Aternity.Data.Weapon or tool.ToolTip == Aternity.Data.Weapon) then return end
         end
-        
         for _, tool in pairs(player.Backpack:GetChildren()) do
             if tool:IsA("Tool") and (tool.Name == Aternity.Data.Weapon or tool.ToolTip == Aternity.Data.Weapon) then
                 character.Humanoid:EquipTool(tool)
@@ -330,21 +452,15 @@ local function FindValidTarget(name)
     for _, folder in pairs({workspace, workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("NPCs")}) do
         if folder then
             local res = folder:FindFirstChild(name)
-            if res and res:FindFirstChild("Humanoid") and res.Humanoid.Health > 0 then 
-                return res 
-            end
+            if res and res:FindFirstChild("Humanoid") and res.Humanoid.Health > 0 then return res end
         end
     end
-    
     for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name == name and obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then 
-            return obj 
-        end
+        if obj.Name == name and obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then return obj end
     end
     return nil
 end
 
--- ПОТОК 1: АВТОКЛИКЕР
 task.spawn(function()
     local vim = game:GetService("VirtualInputManager")
     while task.wait(0.08) do
@@ -361,7 +477,6 @@ task.spawn(function()
     end
 end)
 
--- ПОТОК 2: АВТОФАРМ УРОВНЕЙ
 task.spawn(function()
     while task.wait(0.4) do
         if Aternity.Flags.AutoFarm and not Aternity.Flags.AutoMirage then
@@ -370,7 +485,6 @@ task.spawn(function()
                 local target = GetMyTargetMob()
                 local mainGui = player.PlayerGui:FindFirstChild("Main")
                 local hasQuest = mainGui and mainGui:FindFirstChild("Quest") and mainGui.Quest.Visible
-                
                 if not hasQuest then
                     local npc = FindValidTarget(target.QuestNPC)
                     if npc and npc:FindFirstChild("HumanoidRootPart") then
@@ -382,10 +496,7 @@ task.spawn(function()
                     local mob = FindValidTarget(target.Name)
                     if mob and mob:FindFirstChild("HumanoidRootPart") then
                         mob.HumanoidRootPart.CanCollide = false
-                        if mob:FindFirstChild("AttackParts") then 
-                            mob.AttackParts:Destroy() 
-                        end
-                        
+                        if mob:FindFirstChild("AttackParts") then mob.AttackParts:Destroy() end
                         local pPos = mob.HumanoidRootPart.CFrame * CFrame.new(0, 8, 0)
                         while Aternity.Flags.AutoFarm and mob.Humanoid.Health > 0 and mainGui.Quest.Visible do
                             SecureTeleport(pPos)
@@ -402,42 +513,30 @@ task.spawn(function()
             end)
         else
             local humanoid = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
-            if humanoid and not Aternity.Flags.AutoChest then 
-                humanoid.PlatformStand = false 
-            end
+            if humanoid and not Aternity.Flags.AutoChest then humanoid.PlatformStand = false end
         end
     end
 end)
 
--- ПОТОК 3: ОБНОВЛЕНИЕ ХАРАКТЕРИСТИК, СБОР СУНДУКОВ И РУЛЕТКА РАСЫ
 task.spawn(function()
     while task.wait(0.5) do
         if Aternity.Flags.AutoStats and #Aternity.Stats.Selected > 0 then
             local points = game.Players.LocalPlayer.Data.Points.Value
             if points > 0 then
-                for _, name in ipairs(Aternity.Stats.Selected) do 
-                    fireGameRemote("AddPoint", name, 1) 
-                end
+                for _, name in ipairs(Aternity.Stats.Selected) do fireGameRemote("AddPoint", name, 1) end
             end
         end
-        
         if Aternity.Flags.AutoChest and not Aternity.Flags.AutoMirage then
             for _, v in pairs(workspace:GetChildren()) do
                 if string.find(v.Name, "Chest") and v:IsA("Part") then
-                    SecureTeleport(v.CFrame) 
-                    task.wait(0.2) 
-                    break
+                    SecureTeleport(v.CFrame) task.wait(0.2) break
                 end
             end
         end
-        
-        if Aternity.Flags.AutoRaceRoll then 
-            fireGameRemote("BlackbeardReward", "Reroll", "1") 
-        end
+        if Aternity.Flags.AutoRaceRoll then fireGameRemote("BlackbeardReward", "Reroll", "1") end
     end
 end)
 
--- ПОТОК 4: ДЕТЕКТОР МИРАЖ-ОСТРОВА
 task.spawn(function()
     while task.wait(2) do
         if Aternity.Flags.AutoMirage then
@@ -451,7 +550,6 @@ task.spawn(function()
     end
 end)
 
--- ПОТОК 5: ДЕТЕКТОР ЛЕГЕНДАРНЫХ МЕЧЕЙ
 task.spawn(function()
     while task.wait(1.5) do
         if Aternity.Flags.AutoSwordSpawn then
@@ -468,141 +566,15 @@ task.spawn(function()
         end
     end
 end)
---======================================================================--
---             ПОТОКИ ФРУКТОВ, АВТОРЕЙДА, ESP И АДМИН-ДЕТЕКТОРА          --
---======================================================================--
 
--- ПОТОК 6: АВТОПОКУПКА И СКЛАДЫВАНИЕ СЛУЧАЙНЫХ ФРУКТОВ
 task.spawn(function()
     while task.wait(10) do
         if Aternity.Flags.AutoBuyFruit then
-            pcall(function()
-                fireGameRemote("Cousin", "BuyFruit")
-                task.wait(1)
-                for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-                    if string.find(string.lower(tool.Name), "fruit") then 
-                        fireGameRemote("StoreFruit", tool.Name, tool) 
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- ПОТОК 7: АВТОМАТИЧЕСКИЙ РЕЙД (ЗАКРЫТИЕ ПАКЕТОВ)
-task.spawn(function()
-    while task.wait(1) do
-        if Aternity.Flags.AutoRaid then
-            pcall(function()
-                fireGameRemote("BlackbeardReward", "Flame", "1")
-                for _, enemy in pairs(workspace:GetChildren()) do
-                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy.Name ~= game.Players.LocalPlayer.Name then
-                        SecureTeleport(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 11, 0))
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- ПОТОК 8: СИСТЕМНЫЙ СКАНИРУЮЩИЙ ДВИЖОК 3D ESP (СУНДУКИ И ФРУКТЫ)
-local espObjects = {}
-task.spawn(function()
-    while task.wait(1) do
-        if Aternity.Flags.VisualESP then
-            pcall(function()
-                for _, obj in pairs(workspace:GetChildren()) do
-                    if (string.find(obj.Name, "Chest") and obj:IsA("Part")) or (string.find(obj.Name:lower(), "fruit") and obj:IsA("Tool")) then
-                        if not espObjects[obj] then
-                            local box = Instance.new("BoxHandleAdornment")
-                            box.Size = obj:IsA("Part") and obj.Size or Vector3.new(4, 4, 4)
-                            box.AlwaysOnTop = true
-                            box.ZIndex = 5
-                            box.Color3 = obj:IsA("Part") and Color3.fromRGB(241, 196, 15) or Color3.fromRGB(155, 89, 182)
-                            box.Adornee = obj
-                            box.Parent = obj
-                            
-                            local billboard = Instance.new("BillboardGui")
-                            billboard.Size = UDim2.new(0, 100, 0, 40)
-                            billboard.AlwaysOnTop = true
-                            billboard.StudsOffset = Vector3.new(0, 3, 0)
-                            
-                            local textLabel = Instance.new("TextLabel", billboard)
-                            textLabel.Size = UDim2.new(1, 0, 1, 0)
-                            textLabel.BackgroundTransparency = 1
-                            textLabel.TextColor3 = box.Color3
-                            textLabel.Font = Enum.Font.GothamBold
-                            textLabel.TextSize = 10
-                            textLabel.Text = obj.Name
-                            
-                            billboard.Parent = obj
-                            espObjects[obj] = {b = box, g = billboard}
-                        end
-                    end
-                end
-            end)
-        else
-            for obj, instances in pairs(espObjects) do
-                if instances.b then instances.b:Destroy() end
-                if instances.g then instances.g:Destroy() end
-                espObjects[obj] = nil
+            fireGameRemote("Cousin", "BuyFruit")
+            task.wait(1)
+            for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                if string.find(string.lower(tool.Name), "fruit") then fireGameRemote("StoreFruit", tool.Name, tool) end
             end
         end
     end
 end)
-
--- ПОТОК 9: ЗАЩИТНЫЙ АДМИН-ДЕТЕКТОР (АВТО-СМЕНА СЕРВЕРА)
-task.spawn(function()
-    game.Players.PlayerAdded:Connect(function(player)
-        pcall(function()
-            if player:GetRankInGroup(4330432) >= 200 or player:IsA("Player") and (string.find(player.Name:lower(), "admin") or string.find(player.Name:lower(), "mod")) then
-                game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
-            end
-        end)
-    end)
-end)
-
--- ПОТОК 10: СИСТЕМНЫЙ ГРАФИЧЕСКИЙ ЛОГГЕР ОШИБОК ДЛЯ ОТЛАДКИ КОДА
-local LogScreen = Instance.new("Frame", MainFrame)
-LogScreen.Size = UDim2.new(1, -125, 1, -115)
-LogScreen.Position = UDim2.new(0, 115, 0, 105)
-LogScreen.BackgroundTransparency = 1
-LogScreen.Visible = false
-
-local LogContainer = Instance.new("ScrollingFrame", LogScreen)
-LogContainer.Size = UDim2.new(1, -5, 1, 0)
-LogContainer.BackgroundTransparency = 1
-LogContainer.CanvasSize = UDim2.new(0, 0, 0, 1000)
-LogContainer.ScrollBarThickness = 2
-
-local LogLayout = Instance.new("UIListLayout", LogContainer)
-LogLayout.Padding = UDim.new(0, 4)
-LogLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-local function createLogEntry(message, typeColor)
-    local LogText = Instance.new("TextLabel", LogContainer)
-    LogText.Size = UDim2.new(1, 0, 0, 20)
-    LogText.BackgroundTransparency = 1
-    LogText.Text = "  [" .. os.date("%X") .. "] " .. message
-    LogText.TextColor3 = typeColor
-    LogText.Font = Enum.Font.Code
-    LogText.TextSize = 10
-    LogText.TextXAlignment = Enum.TextXAlignment.Left
-    LogContainer.CanvasSize = UDim2.new(0, 0, 0, LogLayout.AbsoluteContentSize.Y + 20)
-end
-
-game:GetService("ScriptContext").Error:Connect(function(message, stackTrace, script)
-    pcall(function()
-        if string.find(message:lower(), "aternity") or string.find(message:lower(), "commf") or string.find(message:lower(), "nil value") then
-            createLogEntry("ERROR: " .. message, Color3.fromRGB(231, 76, 60))
-        end
-    end)
-end)
-
-local function LogInfo(message)
-    createLogEntry("INFO: " .. message, Color3.fromRGB(52, 152, 219))
-end
-
-LogInfo("Physics Bypass Activated.")
-LogInfo("Tween Flight Core Status: STABLE.")
-LogInfo("Remotes Secure Handshake: SUCCESS.")
