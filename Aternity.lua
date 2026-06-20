@@ -133,3 +133,65 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 print("[ATERNITY STEP 1] Строгое Obsidian-ядро успешно развернуто.")
+--======================================================================--
+--                       ATERNITY HUB — STEP 2: FIX LOGIC & SIDEBAR     --
+--======================================================================--
+
+-- 1. СТАБИЛЬНЫЙ ПЕРЕХВАТ ПИНГА И FPS ЧЕРЕЗ СЛУЖБУ СТАТИСТИКИ ROBLOX
+task.spawn(function()
+    local lastTime = os.clock()
+    local frameCount = 0
+    local statsService = game:GetService("Stats")
+    
+    RunService.Heartbeat:Connect(function()
+        frameCount = frameCount + 1
+        if os.clock() - lastTime >= 1 then
+            pcall(function()
+                -- Метод прямого чтения сетевого пинга из системного коннекта
+                local networkStats = statsService:FindFirstChild("Network")
+                local ping = networkStats and math.floor(networkStats.ServerPing.Value) or 0
+                
+                -- Запись стабильных значений в текстовое поле хедера
+                if InfoLabel then
+                    InfoLabel.Text = "FPS: " .. frameCount .. " | PING: " .. ping .. "ms"
+                end
+            end)
+            frameCount = 0
+            lastTime = os.clock()
+        end
+    end)
+end)
+
+-- 2. СТРОГАЯ МАТОВАЯ ЛЕВАТЯ ПАНЕЛЬ НАВИГАЦИИ (Sidebar)
+local Sidebar = Instance.new("Frame", MainFrame)
+Sidebar.Size = UDim2.new(0, 140, 1, -42)
+Sidebar.Position = UDim2.new(0, 0, 0, 42)
+Sidebar.BackgroundColor3 = Color3.fromRGB(15, 17, 22) -- Более темный матовый тон для контраста
+Sidebar.BorderSizePixel = 0
+Sidebar.ZIndex = 2
+
+-- Правая разделительная линия для боковой панели
+local SidebarLine = Instance.new("Frame", Sidebar)
+SidebarLine.Size = UDim2.new(0, 1, 1, 0)
+SidebarLine.Position = UDim2.new(1, -1, 0, 0)
+SidebarLine.BackgroundColor3 = Color3.fromRGB(40, 44, 54)
+SidebarLine.BorderSizePixel = 0
+SidebarLine.ZIndex = 3
+
+-- Автоматический список для вертикального выстраивания строгого меню вкладок
+local SideLayout = Instance.new("UIListLayout", Sidebar)
+SideLayout.Padding = UDim.new(0, 5)
+SideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+SideLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local SidePadding = Instance.new("UIPadding", Sidebar)
+SidePadding.PaddingTop = UDim.new(0, 12)
+
+-- 3. ПРАВЫЙ ОСНОВНОЙ КОНТЕЙНЕР ДЛЯ СТРАНИЦ С ФУНКЦИЯМИ
+local Container = Instance.new("Frame", MainFrame)
+Container.Size = UDim2.new(1, -152, 1, -52)
+Container.Position = UDim2.new(0, 146, 0, 47)
+Container.BackgroundTransparency = 1
+Container.ZIndex = 2
+
+print("[ATERNITY STEP 2] Навигационные панели Dark Obsidian развернуты. Счетчики запущены.")
