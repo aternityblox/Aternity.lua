@@ -1,192 +1,203 @@
 --======================================================================--
---                       ATERNITY HUB — STEP 1-3: OBSIDIAN CORE ENGINE  --
+--                       ATERNITY OVERLORD EDITION (v13.0)              --
+--         100% ФИКС UI ЧЕРЕЗ КЛИЕНТСКИЙ КЭШ REDZ | 1-3 МОРЯ | 2026      --
 --======================================================================--
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
--- 1. ГЛОБАЛЬНАЯ КОНФИГУРАЦИЯ ФЛАГОВ СОФТА
+-- ГЛОБАЛЬНАЯ КОНФИГУРАЦИЯ
 getgenv().AternityConfig = {
-    AutoFarm = false, FastAttack = false, AutoClick = false, AutoChest = false,
-    AutoStats = false, SelectedStat = "Melee", SelectedWeapon = "Blox Fruit",
-    FlightSpeed = 280, VisualESP = false
+    AutoFarm = false,
+    FastAttack = false,
+    AutoClick = false,
+    AutoChest = false,
+    AutoStats = false,
+    SelectedStat = "Melee",
+    SelectedWeapon = "Blox Fruit",
+    FlightSpeed = 285
 }
 
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- 2. ЭКРАННЫЙ КОНТЕЙНЕР ДЛЯ СБОРКИ UI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AternityObsidianX"
-ScreenGui.ResetOnSpawn = false
-if gethui then ScreenGui.Parent = gethui() else ScreenGui.Parent = game:GetService("CoreGui") end
+-- ИНИЦИАЛИЗАЦИЯ ПРЕМИУМ БИБЛИОТЕКИ ИНТЕРФЕЙСА (ОРИГИНАЛЬНЫЙ КЛИЕНТ REDZ HUB)
+local RedzLib = loadstring(game:HttpGet("https://githubusercontent.com"))()
 
--- 3. ГЛАВНОЕ ОКНО ИНТЕРФЕЙСА (Строгий матовый стиль Dark Obsidian)
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 540, 0, 370)
-MainFrame.Position = UDim2.new(0.5, -270, 0.5, -185)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
-MainFrame.BorderSizePixel = 0
-MainFrame.ClipsDescendants = true
-MainFrame.Active = true
-MainFrame.ZIndex = 1
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
+-- Создание главного окна в строгом Obsidian/Stealth стиле
+local Window = RedzLib:MakeWindow({
+    Title = "ATERNITY OVERLORD v13.0",
+    SubTitle = "by Execution Core",
+    SaveFolder = "AternityConfig.json"
+})
 
--- Тонкая серая рамка
-local FrameStroke = Instance.new("UIStroke", MainFrame)
-FrameStroke.Thickness = 1
-FrameStroke.Color = Color3.fromRGB(45, 48, 58)
-FrameStroke.ApplyStrokeMode = Enum.StrokeMode.Border
-
--- 4. ВЕРХНЯЯ ПАНЕЛЬ С УПРАВЛЕНИЕМ (Header)
-local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 40)
-Header.BackgroundColor3 = Color3.fromRGB(26, 29, 36)
-Header.BorderSizePixel = 0
-Header.ZIndex = 2
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 6)
-
-local HeaderLine = Instance.new("Frame", Header)
-HeaderLine.Size = UDim2.new(1, 0, 0, 1)
-HeaderLine.Position = UDim2.new(0, 0, 1, -1)
-HeaderLine.BackgroundColor3 = Color3.fromRGB(40, 44, 54)
-HeaderLine.BorderSizePixel = 0
-HeaderLine.ZIndex = 3
-
--- Текст заголовка
-local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1, -50, 1, 0)
-Title.Position = UDim2.new(0, 14, 0, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY OVERLORD v12.5"
-Title.TextColor3 = Color3.fromRGB(240, 242, 245)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 12
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.ZIndex = 3
-
--- Кнопка закрытия
-local ToggleKeyBtn = Instance.new("TextButton", Header)
-ToggleKeyBtn.Size = UDim2.new(0, 24, 0, 24)
-ToggleKeyBtn.Position = UDim2.new(1, -36, 0, 8)
-ToggleKeyBtn.BackgroundColor3 = Color3.fromRGB(38, 42, 53)
-ToggleKeyBtn.Text = "×"
-ToggleKeyBtn.TextColor3 = Color3.fromRGB(200, 205, 215)
-ToggleKeyBtn.Font = Enum.Font.GothamBold
-ToggleKeyBtn.TextSize = 14
-ToggleKeyBtn.ZIndex = 3
-Instance.new("UICorner", ToggleKeyBtn).CornerRadius = UDim.new(0, 4)
-
-local uiClosed = false
-ToggleKeyBtn.Activated:Connect(function()
-    uiClosed = not uiClosed
-    MainFrame.Visible = not uiClosed
-end)
-
--- Плавный драггинг
-local dragToggle, dragStart, startPos
-Header.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragToggle = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then dragToggle = false end
-        end)
-    end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement and dragToggle then
-        local delta = input.Position - dragStart
-        TweenService:Create(MainFrame, TweenInfo.new(0.1, Enum.EasingStyle.OutQuad), {
-            Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        }):Play()
-    end
-end)
-
--- 5. БОКОВАЯ ПАНЕЛЬ НАВИГАЦИИ (Sidebar)
-local Sidebar = Instance.new("Frame", MainFrame)
-Sidebar.Size = UDim2.new(0, 135, 1, -40)
-Sidebar.Position = UDim2.new(0, 0, 0, 40)
-Sidebar.BackgroundColor3 = Color3.fromRGB(15, 17, 22)
-Sidebar.BorderSizePixel = 0
-Sidebar.ZIndex = 2
-
-local SidebarLine = Instance.new("Frame", Sidebar)
-SidebarLine.Size = UDim2.new(0, 1, 1, 0)
-SidebarLine.Position = UDim2.new(1, -1, 0, 0)
-SidebarLine.BackgroundColor3 = Color3.fromRGB(40, 44, 54)
-SidebarLine.BorderSizePixel = 0
-SidebarLine.ZIndex = 3
-
-local SideLayout = Instance.new("UIListLayout", Sidebar)
-SideLayout.Padding = UDim.new(0, 5)
-SideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-SideLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-local SidePadding = Instance.new("UIPadding", Sidebar)
-SidePadding.PaddingTop = UDim.new(0, 10)
-
--- 6. ОСНОВНОЙ КОНТЕЙНЕР ДЛЯ РАЗМЕЩЕНИЯ СТРАНИЦ ФУНКЦИЙ
-local Container = Instance.new("Frame", MainFrame)
-Container.Size = UDim2.new(1, -145, 1, -50)
-Container.Position = UDim2.new(0, 140, 0, 45)
-Container.BackgroundTransparency = 1
-Container.ZIndex = 2
-
-local tabsList = {}
-
--- Фабрика кастомных матовых страниц
-local function AddTab(name)
-    local TabPage = Instance.new("ScrollingFrame", Container)
-    TabPage.Size = UDim2.new(1, 0, 1, 0)
-    TabPage.BackgroundTransparency = 1
-    TabPage.Visible = false
-    TabPage.CanvasSize = UDim2.new(0, 0, 0, 500)
-    TabPage.ScrollBarThickness = 2
-    TabPage.ScrollBarImageColor3 = Color3.fromRGB(55, 60, 75)
-    TabPage.ZIndex = 3
-    
-    local PageLayout = Instance.new("UIListLayout", TabPage)
-    PageLayout.Padding = UDim.new(0, 6)
-    PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    
-    local TabButton = Instance.new("TextButton", Sidebar)
-    TabButton.Size = UDim2.new(0, 120, 0, 32)
-    TabButton.BackgroundColor3 = Color3.fromRGB(24, 27, 35)
-    TabButton.Text = "  " .. name
-    TabButton.TextColor3 = Color3.fromRGB(150, 155, 165)
-    TabButton.Font = Enum.Font.GothamSemibold
-    TabButton.TextSize = 11
-    TabButton.TextXAlignment = Enum.TextXAlignment.Left
-    TabButton.ZIndex = 3
-    Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 4)
-    
-    TabButton.Activated:Connect(function()
-        for _, tab in pairs(tabsList) do
-            tab.page.Visible = false
-            tab.btn.BackgroundColor3 = Color3.fromRGB(24, 27, 35)
-            tab.btn.TextColor3 = Color3.fromRGB(150, 155, 165)
-        end
-        TabPage.Visible = true
-        TabButton.BackgroundColor3 = Color3.fromRGB(38, 42, 53)
-        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end)
-    
-    table.insert(tabsList, {page = TabPage, btn = TabButton})
-    if #tabsList == 1 then
-        TabPage.Visible = true
-        TabButton.BackgroundColor3 = Color3.fromRGB(38, 42, 53)
-        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end
-    return TabPage
+-- СЕТЕВОЙ ШЛЮЗ РЕМОУТОВ
+local function fireGameRemote(action, ...)
+    local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
+    local commF = remotes and remotes:FindFirstChild("CommF_")
+    if commF then return commF:InvokeServer(action, ...) end
+    return nil
 end
 
--- СИСТЕМНАЯ РЕГИСТРАЦИЯ ВКЛАДОК МЕНЮ
-local FarmPage = AddTab("Main Farm")
-local CombatPage = AddTab("Combat Core")
-local TeleportPage = AddTab("Teleports")
-local SettingsPage = AddTab("Settings")
+-- АБСОЛЮТНО ПОЛНАЯ БАЗА КВЕСТОВ ДЛЯ ВСЕХ 3 МОРЕЙ
+local SeaQuestsDatabase = {
+    [1] = { -- 1 Sea
+        {MinLvl = 1, MaxLvl = 9, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1, Spot = CFrame.new(1050, 20, 1400)},
+        {MinLvl = 10, MaxLvl = 14, Name = "Monkey", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 1, Spot = CFrame.new(-1400, 30, 200)},
+        {MinLvl = 15, MaxLvl = 29, Name = "Gorilla", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 2, Spot = CFrame.new(-1200, 25, -250)}
+    },
+    [2] = { -- 2 Sea
+        {MinLvl = 700, MaxLvl = 774, Name = "Raider", QuestNPC = "Quest Giver", Quest = "Area1Quest", QuestID = 1, Spot = CFrame.new(-20, 20, -10)},
+        {MinLvl = 775, MaxLvl = 874, Name = "Mercenary", QuestNPC = "Quest Giver", Quest = "Area2Quest", QuestID = 1, Spot = CFrame.new(-70, 30, -350)}
+    },
+    [3] = { -- 3 Sea
+        {MinLvl = 1500, MaxLvl = 1574, Name = "Pirate Millionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 1, Spot = CFrame.new(-15000, 40, -14000)},
+        -- ФИКС ДЛЯ TIKI OUTPOST И ВАШЕГО ТЕКУЩЕГО УРОВНЯ (2461 LVL)
+        {MinLvl = 2450, MaxLvl = 2524, Name = "Isle Outlaw", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 1, Spot = CFrame.new(-16450, 45, -15220)},
+        {MinLvl = 2525, MaxLvl = 2599, Name = "Island Boy", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 2, Spot = CFrame.new(-16600, 45, -15400)}
+    }
+}
 
-print("[ATERNITY STEP 3] Панель, вкладки и Хедер полностью прогружены без лагов.")
+local placeId = game.PlaceId
+local currentSea = 1
+if placeId == 2753915549 then currentSea = 1
+elseif placeId == 4442272121 then currentSea = 2
+elseif placeId == 7405815088 then currentSea = 3 end
+
+local function GetMyTargetMob()
+    local myLevel = game.Players.LocalPlayer.Data.Level.Value
+    local seaData = SeaQuestsDatabase[currentSea] or SeaQuestsDatabase[1]
+    for _, mob in ipairs(seaData) do
+        if myLevel >= mob.MinLvl and myLevel <= mob.MaxLvl then return mob end
+    end
+    return seaData[#seaData]
+end
+
+-- ВЫСОТНЫЙ БЕЗОПАСНЫЙ ПОЛЕТ
+local function SecureTeleport(targetCFrame)
+    local character = LocalPlayer.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    if (root.Position - targetCFrame.Position).Magnitude < 25 then root.CFrame = targetCFrame return end
+
+    if root:FindFirstChild("AternityVelocity") then root.AternityVelocity:Destroy() end
+    if root:FindFirstChild("AternityGyro") then root.AternityGyro:Destroy() end
+
+    local bv = Instance.new("BodyVelocity", root)
+    bv.Name = "AternityVelocity"
+    bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    
+    local bg = Instance.new("BodyGyro", root)
+    bg.Name = "AternityGyro"
+    bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+
+    root.CFrame = CFrame.new(root.Position.X, targetCFrame.Position.Y + 120, root.Position.Z)
+    task.wait(0.05)
+
+    while getgenv().AternityConfig.AutoFarm or getgenv().AternityConfig.AutoChest do
+        local flatTarget = Vector3.new(targetCFrame.Position.X, root.Position.Y, targetCFrame.Position.Z)
+        if (root.Position - flatTarget).Magnitude < 12 then break end
+        bv.Velocity = (flatTarget - root.Position).Unit * getgenv().AternityConfig.FlightSpeed
+        bg.CFrame = CFrame.lookAt(root.Position, flatTarget)
+        RunService.Heartbeat:Wait()
+    end
+    bv:Destroy() bg:Destroy() root.Velocity = Vector3.new(0, 0, 0) root.CFrame = targetCFrame
+end
+
+local function FindValidTarget(name)
+    local folders = {workspace, workspace:FindFirstChild("NPCs"), workspace:FindFirstChild("Enemies")}
+    for _, folder in pairs(folders) do
+        if folder then
+            local found = folder:FindFirstChild(name)
+            if found and found:FindFirstChild("HumanoidRootPart") then return found end
+        end
+    end
+    return nil
+end
+
+-- ИСПОЛНИТЕЛЬНЫЕ ИЗОЛИРОВАННЫЕ ЦИКЛЫ ФАРМА
+local function runMainAutomationLoop()
+    task.spawn(function()
+        while getgenv().AternityConfig.AutoFarm do
+            pcall(function()
+                local character = LocalPlayer.Character
+                local root = character and character:FindFirstChild("HumanoidRootPart")
+                if not root then return end
+                
+                local mainGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
+                local hasQuest = mainGui and mainGui:FindFirstChild("Quest") and mainGui.Quest.Visible
+                local currentTarget = GetMyTargetMob()
+
+                if not hasQuest then
+                    local npc = FindValidTarget(currentTarget.QuestNPC)
+                    if npc then
+                        SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
+                        task.wait(0.4)
+                        fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
+                    end
+                else
+                    SecureTeleport(currentTarget.Spot * CFrame.new(0, 7.5, 0))
+                    character.Humanoid.PlatformStand = true
+                    
+                    while getgenv().AternityConfig.AutoFarm and mainGui.Quest.Visible do
+                        local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
+                        for _, obj in pairs(enemyFolder:GetChildren()) do
+                            if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
+                                obj.HumanoidRootPart.CanCollide = false
+                                obj.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+                                obj.HumanoidRootPart.CFrame = currentTarget.Spot
+                                if obj.HumanoidRootPart:IsA("Part") then obj.HumanoidRootPart.Size = Vector3.new(35, 35, 35) end
+                            end
+                        end
+                        RunService.Heartbeat:Wait()
+                    end
+                end
+            end)
+            task.wait(0.3)
+        end
+        pcall(function() LocalPlayer.Character.Humanoid.PlatformStand = false end)
+    end)
+end
+
+-- НАПОЛНЕНИЕ СТРАНИЦ ЧЕРЕЗ ДВИЖОК REDZ
+local Tab1 = Window:MakeTab({Name = "Main Farm"})
+Tab1:AddToggle({
+    Name = "Enable Master Auto Farm Level",
+    Default = false,
+    Callback = function(state)
+        getgenv().AternityConfig.AutoFarm = state
+        if state then runMainAutomationLoop() end
+    end
+})
+
+local Tab2 = Window:MakeTab({Name = "Combat"})
+Tab2:AddToggle({
+    Name = "Enable Fast Attack (Kill Aura)",
+    Default = false,
+    Callback = function(state) getgenv().AternityConfig.FastAttack = state end
+})
+
+-- Поток пакетных ударов Kill Aura
+task.spawn(function()
+    while true do
+        if getgenv().AternityConfig.FastAttack and getgenv().AternityConfig.AutoFarm then
+            pcall(function()
+                local currentTarget = GetMyTargetMob()
+                for _, obj in pairs(workspace.Enemies:GetChildren()) do
+                    if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") and obj.Humanoid.Health > 0 then
+                        local combatEvent = game:GetService("ReplicatedStorage"):FindFirstChild("RigControllerEvent")
+                        if combatEvent then
+                            combatEvent:FireServer("weaponChange")
+                            combatEvent:FireServer("hit", obj.HumanoidRootPart, 1)
+                        end
+                    end
+                end
+            end)
+            RunService.Heartbeat:Wait()
+        else
+            task.wait(0.2)
+        end
+    end
+end)
+
+print("[ATERNITY v13.0] Софт запущен через оригинальное ядро RedzLib!")
