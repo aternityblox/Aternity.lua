@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v4.4)           --
---         ФИНАЛЬНЫЙ СТАБИЛЬНЫЙ МОНОЛИТ ДЛЯ TIKI OUTPOST | 2026         --
+--                       ATERNITY HUB — REBORN EDITION (v4.6)           --
+--         ФИКС TIKI OUTPOST | ИСПРАВЛЕННЫЙ ПОИСК ХИТБОКСОВ МОБОВ       --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -23,36 +23,20 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- АКТУАЛИЗИРОВАННАЯ БАЗА ДАННЫХ TIKI OUTPOST И ДРУГИХ МОРЕЙ
+-- АКТУАЛЬНАЯ БАЗА ДАННЫХ КВЕСТОВ ДЛЯ МАКСИМАЛЬНОГО УРОВНЯ
 local SeaMobData = {
     [1] = {
-        {MinLvl = 1, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1},
-        {MinLvl = 10, Name = "Monkey", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 1},
-        {MinLvl = 15, Name = "Gorilla", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 2},
-        {MinLvl = 30, Name = "Pirate", QuestNPC = "Pirate Adventurer", Quest = "PirateIslandQuest", QuestID = 1}
+        {MinLvl = 1, Name = "Bandit", Quest = "BanditQuest", QuestID = 1},
+        {MinLvl = 10, Name = "Monkey", Quest = "JungleQuest", QuestID = 1}
     },
     [2] = {
-        {MinLvl = 700, Name = "Raider", QuestNPC = "Quest Giver", Quest = "Area1Quest", QuestID = 1},
-        {MinLvl = 775, Name = "Mercenary", QuestNPC = "Quest Giver", Quest = "Area2Quest", QuestID = 1},
-        {MinLvl = 875, Name = "Swan Pirate", QuestNPC = "Quest Giver", Quest = "Area2Quest", QuestID = 2}
+        {MinLvl = 700, Name = "Raider", Quest = "Area1Quest", QuestID = 1}
     },
     [3] = {
-        {MinLvl = 1500, Name = "Pirate Millionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 1},
-        {MinLvl = 1575, Name = "Pistol Billionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 2},
-        {MinLvl = 1650, Name = "Dragon Crew Warrior", QuestNPC = "Floating Turtle Quest Giver", Quest = "FloatingTurtleQuest", QuestID = 1},
-        {MinLvl = 1725, Name = "Dragon Crew Archer", QuestNPC = "Floating Turtle Quest Giver", Quest = "FloatingTurtleQuest", QuestID = 2},
-        {MinLvl = 1825, Name = "Superhuman", QuestNPC = "Castle Quest Giver", Quest = "CastleQuest", QuestID = 1},
-        {MinLvl = 2200, Name = "Cookie Commando", QuestNPC = "Ice Cream Chef", Quest = "IceCreamIslandQuest", QuestID = 1},
-        {MinLvl = 2300, Name = "Cake Guard", QuestNPC = "Cake Chef", Quest = "CakeIslandQuest", QuestID = 1},
-        {MinLvl = 2400, Name = "Baking Warrior", QuestNPC = "Sweet Chef", Quest = "SweetIslandQuest", QuestID = 1},
-        
-        -- СТРОГИЙ ФИКС ДЛЯ ВАШЕГО ТЕКУЩЕГО УРОВНЯ НА ТИКИ АВАНПОСТЕ (2461 LVL)
-        {MinLvl = 2450, Name = "Isle Outlaw", QuestNPC = "Tiki Quest Giver", Quest = "TikiOutpostQuest", QuestID = 1},
-        {MinLvl = 2525, Name = "Island Boy", QuestNPC = "Tiki Quest Giver", Quest = "TikiOutpostQuest", QuestID = 2},
-        
-        {MinLvl = 2700, Name = "Prehistoric Warrior", QuestNPC = "Ancient Quest Giver", Quest = "PrehistoricQuest", QuestID = 1},
-        {MinLvl = 2750, Name = "Ancient Guardian", QuestNPC = "Ancient Quest Giver", Quest = "GuardianQuest", QuestID = 1},
-        {MinLvl = 2800, Name = "Aternity Abyss Slayer", QuestNPC = "Abyss Quest Giver", Quest = "AbyssQuest", QuestID = 1}
+        {MinLvl = 1500, Name = "Pirate Millionaire", Quest = "Port TownQuest", QuestID = 1},
+        -- СТРОГИЙ СЕТЕВОЙ ФИКС ДЛЯ ВАШЕГО ТЕКУЩЕГО УРОВНЯ НА ТИКИ АВАНПОСТЕ (2461 LVL)
+        {MinLvl = 2450, Name = "Isle Outlaw", Quest = "TikiOutpostQuest", QuestID = 1},
+        {MinLvl = 2525, Name = "Island Boy", Quest = "TikiOutpostQuest", QuestID = 2}
     }
 }
 
@@ -131,18 +115,20 @@ local function SecureTeleport(targetCFrame)
     root.CFrame = targetCFrame
 end
 
--- ГЛУБОКИЙ ПОИСК ЦЕЛЕЙ НА КАРТЕ (NPC И МОБЫ)
-local function FindValidTarget(name)
-    local locations = {workspace, workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("NPCs")}
-    for _, folder in pairs(locations) do
-        if folder then
-            local found = folder:FindFirstChild(name)
-            if found and found:FindFirstChild("HumanoidRootPart") then return found end
+-- АКТУАЛИЗИРОВАННЫЙ СЕТЕВОЙ СКАНИРОВЩИК ХИТБОКСОВ МОБОВ ДЛЯ TIKI OUTPOST
+local function FindValidEnemy(name)
+    -- Проверка стандартной папки мобов
+    local enemyFolder = workspace:FindFirstChild("Enemies")
+    if enemyFolder then
+        for _, enemy in pairs(enemyFolder:GetChildren()) do
+            if string.find(enemy.Name, name) and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+                return enemy
+            end
         end
     end
-    
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name == name and (obj:IsA("Model") or obj:IsA("Part")) and obj:FindFirstChild("HumanoidRootPart") then
+    -- Глубокий перехват по всей карте
+    for _, obj in pairs(workspace:GetChildren()) do
+        if string.find(obj.Name, name) and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 and obj:FindFirstChild("HumanoidRootPart") then
             return obj
         end
     end
@@ -172,7 +158,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v4.4 [Tiki Outpost]"
+Title.Text = "ATERNITY HUB v4.6 [Tiki Fixed]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -203,7 +189,7 @@ local function createTab(tabName)
     TabButton.Size = UDim2.new(1, 0, 0, 35)
     TabButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     TabButton.Text = tabName
-    TabButton.TextColor3 = Color3.fromRGB(47, 53, 66)
+    TabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
     TabButton.Font = Enum.Font.GothamSemibold
     TabButton.TextSize = 11
     Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 6)
@@ -211,7 +197,7 @@ local function createTab(tabName)
     TabButton.Activated:Connect(function()
         for _, tab in pairs(tabsList) do
             tab.page.Visible = false
-            tab.btn.TextColor3 = Color3.fromRGB(47, 53, 66)
+            tab.btn.TextColor3 = Color3.fromRGB(200, 200, 200)
         end
         TabPage.Visible = true
         TabButton.TextColor3 = Color3.fromRGB(0, 255, 200)
@@ -229,7 +215,7 @@ local function addToggle(name, prop, parentPage, callback)
     Btn.Size = UDim2.new(1, -5, 0, 40)
     Btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Btn.Text = "  " .. name .. ": OFF"
-    Btn.TextColor3 = Color3.fromRGB(47, 53, 66)
+    Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
     Btn.Font = Enum.Font.GothamSemibold
     Btn.TextSize = 11
     Btn.TextXAlignment = Enum.TextXAlignment.Left
@@ -239,7 +225,7 @@ local function addToggle(name, prop, parentPage, callback)
         getgenv().AternityConfig[prop] = not getgenv().AternityConfig[prop]
         local state = getgenv().AternityConfig[prop]
         Btn.Text = state and "  " .. name .. ": ON" or "  " .. name .. ": OFF"
-        Btn.TextColor3 = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(47, 53, 66)
+        Btn.TextColor3 = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(200, 200, 200)
         if callback then callback(state) end
     end)
 end
@@ -250,9 +236,7 @@ local function EquipWeapon()
         local character = player.Character
         if not character or not character:FindFirstChild("Humanoid") then return end
         for _, tool in pairs(character:GetChildren()) do
-            if tool:IsA("Tool") and (tool.Name == getgenv().AternityConfig.SelectedWeapon or string.find(tool.Name, "Fruit")) then 
-                return 
-            end
+            if tool:IsA("Tool") and (tool.Name == getgenv().AternityConfig.SelectedWeapon or string.find(tool.Name, "Fruit")) then return end
         end
         for _, tool in pairs(player.Backpack:GetChildren()) do
             if tool:IsA("Tool") and (tool.Name == getgenv().AternityConfig.SelectedWeapon or string.find(tool.Name, "Fruit")) then
@@ -263,7 +247,7 @@ local function EquipWeapon()
     end)
 end
 
--- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ СИНХРОНИЗИРОВАННОГО АВТОФАРМА (TIKI ВЕРИФИКАЦИЯ)
+-- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ ОБНОВЛЕННОГО АВТОФАРМА
 addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
     task.spawn(function()
         while getgenv().AternityConfig.AutoFarm do
@@ -278,17 +262,13 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 local currentTarget = GetMyTargetMob()
 
                 if not hasQuest then
-                    -- 1. Летим к Tiki Quest Giver на аванпост
-                    local npc = FindValidTarget(currentTarget.QuestNPC)
-                    if npc then
-                        SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
-                        task.wait(0.5) -- Оптимальная задержка перед диалогом
-                        fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
-                    end
+                    -- Прямой впрыск квеста на сервер (минуя физический поиск NPC Tiki Quest Giver 1)
+                    fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
+                    task.wait(0.4)
                 else
-                    -- 2. Квест взят, летим зачищать Isle Outlaw / Island Boy
-                    local mob = FindValidTarget(currentTarget.Name)
-                    if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
+                    -- Квест активен, ищем мобов Isle Outlaw / Island Boy по обновленной маске поиска
+                    local mob = FindValidEnemy(currentTarget.Name)
+                    if mob then
                         mob.HumanoidRootPart.CanCollide = false
                         if mob:FindFirstChild("AttackParts") then 
                             mob.AttackParts:Destroy() 
@@ -299,10 +279,10 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                         
                         while getgenv().AternityConfig.AutoFarm and mob.Humanoid.Health > 0 and mainGui.Quest.Visible do
                             SecureTeleport(farmPos)
-                            -- Стабилизированное стягивание пачки
+                            -- Автоматическое стягивание пачки
                             local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
                             for _, obj in pairs(enemyFolder:GetChildren()) do
-                                if obj.Name == currentTarget.Name and obj:FindFirstChild("HumanoidRootPart") then
+                                if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") then
                                     obj.HumanoidRootPart.CanCollide = false
                                     obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame
                                 end
@@ -310,15 +290,12 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                             task.wait()
                         end
                     else
-                        -- Если мобов на споте нет, летим караулить точку спавна
-                        local spawners = workspace:FindFirstChild("EnemySpawns") or workspace:FindFirstChild("Spawners")
-                        if spawners and spawners:FindFirstChild(currentTarget.Name) then
-                            SecureTeleport(spawners[currentTarget.Name].CFrame * CFrame.new(0, 15, 0))
-                        end
+                        -- Если мобы еще не прогрузились, летим на спот по точным физическим координатам Tiki Outpost
+                        SecureTeleport(CFrame.new(-16450, 45, -15220))
                     end
                 end
             end)
-            task.wait(0.4)
+            task.wait(0.3)
         end
         pcall(function() 
             game.Players.LocalPlayer.Character.Humanoid.PlatformStand = false 
@@ -364,4 +341,4 @@ end)
 tabsList.page.Visible = true
 tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Сборка v4.4 для аванпоста Tiki успешно запущена!")
+print("[ATERNITY] Сборка v4.6 для Tiki Outpost успешно запущена!")
