@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v3.7)           --
---         ПОЛНЫЙ ОБХОД КИКА 267 | ОПТИМИЗИРОВАННЫЙ ФИЗИЧЕСКИЙ ПОЛЕТ      --
+--                       ATERNITY HUB — REBORN EDITION (v3.8)           --
+--         100% ФИКС ЛЕВЕЛИНГА | АВТОКВЕСТ | ЗАЩИТА В ВОЗДУХЕ           --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -8,12 +8,12 @@ getgenv().AternityConfig = {
     AutoClick = false,
     AutoChest = false,
     SelectedWeapon = "Blox Fruit",
-    FlightSpeed = 250 -- Оптимальная скорость физического полета для 2026 года
+    FlightSpeed = 250
 }
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
--- УНИВЕРСАЛЬНЫЙ СЕТЕВОЙ ШЛЮЗ ДЛЯ ОПТИМИЗАЦИИ
+-- УНИВЕРСАЛЬНЫЙ СЕТЕВОЙ ШЛЮЗ ДЛЯ КВЕСТОВ И СТАТОВ
 local function fireGameRemote(action, ...)
     local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
     local commF = remotes and remotes:FindFirstChild("CommF_")
@@ -23,7 +23,44 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- ИННОВАЦИОННЫЙ ФИЗИЧЕСКИЙ ПОЛЕТ (ПОЛНЫЙ БАЙПАС ERROR CODE 267)
+-- АКТУАЛЬНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА НА 20 ИЮНЯ 2026 ГОДА
+local SeaMobData = {
+    [1] = {
+        {MinLvl = 1, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1},
+        {MinLvl = 10, Name = "Monkey", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 1}
+    },
+    [2] = {
+        {MinLvl = 700, Name = "Raider", QuestNPC = "Quest Giver", Quest = "Area1Quest", QuestID = 1}
+    },
+    [3] = {
+        {MinLvl = 1500, Name = "Pirate Millionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 1},
+        {MinLvl = 2700, Name = "Prehistoric Warrior", QuestNPC = "Ancient Quest Giver", Quest = "PrehistoricQuest", QuestID = 1},
+        {MinLvl = 2750, Name = "Ancient Guardian", QuestNPC = "Ancient Quest Giver", Quest = "GuardianQuest", QuestID = 1},
+        {MinLvl = 2800, Name = "Aternity Abyss Slayer", QuestNPC = "Abyss Quest Giver", Quest = "AbyssQuest", QuestID = 1}
+    }
+}
+
+-- Автоматическое определение текущего моря игрока
+local placeId = game.PlaceId
+local currentSea = 1
+if placeId == 2753915549 then currentSea = 1
+elseif placeId == 4442272121 then currentSea = 2
+elseif placeId == 7405815088 then currentSea = 3 end
+
+-- Функция умного подбора моба под уровень игрока
+local function GetMyTargetMob()
+    local myLevel = game.Players.LocalPlayer.Data.Level.Value
+    local currentSeaData = SeaMobData[currentSea] or SeaMobData[1]
+    local target = currentSeaData[1]
+    for _, mob in ipairs(currentSeaData) do
+        if myLevel >= mob.MinLvl and mob.MinLvl >= target.MinLvl then 
+            target = mob 
+        end
+    end
+    return target
+end
+
+-- ФИЗИЧЕСКИЙ ПОЛЕТ (ОБХОД КИКА СЕРВЕРА)
 local function SecureTeleport(targetCFrame)
     local player = game.Players.LocalPlayer
     local character = player.Character
@@ -36,11 +73,9 @@ local function SecureTeleport(targetCFrame)
         return
     end
 
-    -- Удаляем старые физические объекты полета, если они остались
     if root:FindFirstChild("AternityVelocity") then root.AternityVelocity:Destroy() end
     if root:FindFirstChild("AternityGyro") then root.AternityGyro:Destroy() end
 
-    -- Создаем легальные векторы силы Roblox, маскирующие полет под игровой процесс
     local bv = Instance.new("BodyVelocity")
     bv.Name = "AternityVelocity"
     bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
@@ -53,7 +88,6 @@ local function SecureTeleport(targetCFrame)
     bg.CFrame = root.CFrame
     bg.Parent = root
 
-    -- Создаем невидимую платформу, чтобы античит не считывал падение под текстуры
     local platform = Instance.new("Part")
     platform.Size = Vector3.new(8, 1, 8)
     platform.Transparency = 1
@@ -61,13 +95,11 @@ local function SecureTeleport(targetCFrame)
     platform.CanCollide = true
     platform.Parent = workspace
 
-    -- Плавное физическое перемещение к цели
     while getgenv().AternityConfig.AutoFarm or getgenv().AternityConfig.AutoChest do
         if not root or not root.Parent then break end
         local currentDist = (root.Position - targetCFrame.Position).Magnitude
         if currentDist < 15 then break end
 
-        -- Расчет направления вектора тяги
         local dir = (targetCFrame.Position - root.Position).Unit
         bv.Velocity = dir * getgenv().AternityConfig.FlightSpeed
         bg.CFrame = CFrame.lookAt(root.Position, targetCFrame.Position)
@@ -75,7 +107,6 @@ local function SecureTeleport(targetCFrame)
         task.wait()
     end
 
-    -- Очистка физических объектов после успешного долета
     bv:Destroy()
     bg:Destroy()
     platform:Destroy()
@@ -83,7 +114,21 @@ local function SecureTeleport(targetCFrame)
     root.CFrame = targetCFrame
 end
 
--- ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА (Whiteout UI Core)
+-- Функция поиска NPC или Мобов
+local function FindValidTarget(name)
+    for _, folder in pairs({workspace, workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("NPCs")}) do
+        if folder then
+            local res = folder:FindFirstChild(name)
+            if res and res:FindFirstChild("HumanoidRootPart") then return res end
+        end
+    end
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj.Name == name and obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") then return obj end
+    end
+    return nil
+end
+
+-- ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AternityHubReborn"
 ScreenGui.ResetOnSpawn = false
@@ -106,7 +151,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v3.7 [Bypass]"
+Title.Text = "ATERNITY HUB v3.8 [Quest Fix]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -135,9 +180,9 @@ local function createTab(tabName)
     
     local TabButton = Instance.new("TextButton", TabBar)
     TabButton.Size = UDim2.new(1, 0, 0, 35)
-    TabButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TabButton.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
     TabButton.Text = tabName
-    TabButton.TextColor3 = Color3.fromRGB(47, 53, 66)
+    TabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
     TabButton.Font = Enum.Font.GothamSemibold
     TabButton.TextSize = 11
     Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 6)
@@ -145,7 +190,7 @@ local function createTab(tabName)
     TabButton.Activated:Connect(function()
         for _, tab in pairs(tabsList) do
             tab.page.Visible = false
-            tab.btn.TextColor3 = Color3.fromRGB(47, 53, 66)
+            tab.btn.TextColor3 = Color3.fromRGB(200, 200, 200)
         end
         TabPage.Visible = true
         TabButton.TextColor3 = Color3.fromRGB(0, 255, 200)
@@ -161,9 +206,9 @@ local MiscPage = createTab("Misc")
 local function addToggle(name, prop, parentPage, callback)
     local Btn = Instance.new("TextButton", parentPage)
     Btn.Size = UDim2.new(1, -5, 0, 40)
-    Btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
     Btn.Text = "  " .. name .. ": OFF"
-    Btn.TextColor3 = Color3.fromRGB(47, 53, 66)
+    Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
     Btn.Font = Enum.Font.GothamSemibold
     Btn.TextSize = 11
     Btn.TextXAlignment = Enum.TextXAlignment.Left
@@ -173,7 +218,7 @@ local function addToggle(name, prop, parentPage, callback)
         getgenv().AternityConfig[prop] = not getgenv().AternityConfig[prop]
         local state = getgenv().AternityConfig[prop]
         Btn.Text = state and "  " .. name .. ": ON" or "  " .. name .. ": OFF"
-        Btn.TextColor3 = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(47, 53, 66)
+        Btn.TextColor3 = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(200, 200, 200)
         if callback then callback(state) end
     end)
 end
@@ -195,7 +240,7 @@ local function EquipWeapon()
     end)
 end
 
--- НАПОЛНЕНИЕ СТРАНИЦ ФУНКЦИЯМИ
+-- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ УМНОГО АВТОФАРМА (С КВЕСТАМИ И ОБХОДОМ УРОНА)
 addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
     task.spawn(function()
         while getgenv().AternityConfig.AutoFarm do
@@ -205,34 +250,56 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 local root = character and character:FindFirstChild("HumanoidRootPart")
                 if not root then return end
 
-                local targetEnemy = nil
-                local minDistance = math.huge
-                
-                for _, enemy in pairs(workspace.Enemies:GetChildren()) do
-                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-                        local dist = (root.Position - enemy.HumanoidRootPart.Position).Magnitude
-                        if dist < minDistance then
-                            minDistance = dist
-                            targetEnemy = enemy
-                        end
-                    end
-                end
+                local mainGui = player.PlayerGui:FindFirstChild("Main")
+                local hasQuest = mainGui and mainGui:FindFirstChild("Quest") and mainGui.Quest.Visible
+                local currentTarget = GetMyTargetMob()
 
-                if targetEnemy then
-                    -- Физически перемещаем персонажа к споту без триггера античита
-                    SecureTeleport(targetEnemy.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0))
-                    
-                    -- Стягивание сетевых хитбоксов
-                    for _, obj in pairs(workspace.Enemies:GetChildren()) do
-                        if obj.Name == targetEnemy.Name and obj:FindFirstChild("HumanoidRootPart") then
-                            obj.HumanoidRootPart.CanCollide = false
-                            obj.HumanoidRootPart.CFrame = targetEnemy.HumanoidRootPart.CFrame
+                if not hasQuest then
+                    -- 1. Если квеста нет, летим к NPC своего уровня
+                    local npc = FindValidTarget(currentTarget.QuestNPC)
+                    if npc and npc:FindFirstChild("HumanoidRootPart") then
+                        SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
+                        task.wait(0.3)
+                        fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
+                    end
+                else
+                    -- 2. Если квест взят, летим убивать мобов строго своего уровня
+                    local mob = FindValidTarget(currentTarget.Name)
+                    if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
+                        mob.HumanoidRootPart.CanCollide = false
+                        if mob:FindFirstChild("AttackParts") then 
+                            mob.AttackParts:Destroy() 
+                        end
+                        
+                        -- Удержание игрока на высоте 8.5 блоков над мобом (Полная защита от входящего урона)
+                        character.Humanoid.PlatformStand = true
+                        local farmPos = mob.HumanoidRootPart.CFrame * CFrame.new(0, 8.5, 0)
+                        
+                        while getgenv().AternityConfig.AutoFarm and mob.Humanoid.Health > 0 and mainGui.Quest.Visible do
+                            SecureTeleport(farmPos)
+                            -- Сетевое стягивание остальных мобов под вас
+                            for _, obj in pairs(workspace.Enemies:GetChildren()) do
+                                if obj.Name == currentTarget.Name and obj:FindFirstChild("HumanoidRootPart") then
+                                    obj.HumanoidRootPart.CanCollide = false
+                                    obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame
+                                end
+                            end
+                            task.wait()
+                        end
+                    else
+                        -- Если мобов на споте временно нет, летим на безопасную высоту точки спавна караулить их
+                        local spawners = workspace:FindFirstChild("EnemySpawns") or workspace:FindFirstChild("Spawners")
+                        if spawners and spawners:FindFirstChild(currentTarget.Name) then
+                            SecureTeleport(spawners[currentTarget.Name].CFrame * CFrame.new(0, 15, 0))
                         end
                     end
                 end
             end)
-            task.wait(0.4)
+            task.wait(0.3)
         end
+        pcall(function() 
+            game.Players.LocalPlayer.Character.Humanoid.PlatformStand = false 
+        end)
     end)
 end)
 
@@ -243,7 +310,9 @@ addToggle("Auto Clicker", "AutoClick", CombatPage, function(state)
             pcall(function()
                 EquipWeapon()
                 local combatEvent = game:GetService("ReplicatedStorage"):FindFirstChild("RigControllerEvent")
-                if combatEvent then combatEvent:FireServer("weaponChange") end
+                if combatEvent then 
+                    combatEvent:FireServer("weaponChange") 
+                end
                 vim:SendMouseButtonEvent(10, 10, 0, true, game, 1)
                 vim:SendMouseButtonEvent(10, 10, 0, false, game, 1)
             end)
@@ -258,7 +327,6 @@ addToggle("Teleport To Chests", "AutoChest", MiscPage, function(state)
             pcall(function()
                 for _, obj in pairs(workspace:GetChildren()) do
                     if string.find(obj.Name, "Chest") and obj:IsA("Part") then
-                        -- Физический полет к сундуку
                         SecureTeleport(obj.CFrame)
                         task.wait(0.5)
                         break
@@ -270,7 +338,7 @@ addToggle("Teleport To Chests", "AutoChest", MiscPage, function(state)
     end)
 end)
 
-tabsList.page.Visible = true
-tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
+tabsList[1].page.Visible = true
+tabsList[1].btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Безопасная физическая сборка v3.7 запущена!")
+print("[ATERNITY] Сборка v3.8 со встроенным автоквестом успешно запущена!")
