@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v4.3)           --
---         100% РАБОЧИЙ ФАРМ ДЛЯ TIKI OUTPOST | 2461 LVL ФИКС | 2026     --
+--                       ATERNITY HUB — REBORN EDITION (v4.4)           --
+--         ФИНАЛЬНЫЙ СТАБИЛЬНЫЙ МОНОЛИТ ДЛЯ TIKI OUTPOST | 2026         --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -172,7 +172,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v4.3 [Tiki Outpost]"
+Title.Text = "ATERNITY HUB v4.4 [Tiki Outpost]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -201,9 +201,9 @@ local function createTab(tabName)
     
     local TabButton = Instance.new("TextButton", TabBar)
     TabButton.Size = UDim2.new(1, 0, 0, 35)
-    TabButton.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
+    TabButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     TabButton.Text = tabName
-    TabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TabButton.TextColor3 = Color3.fromRGB(47, 53, 66)
     TabButton.Font = Enum.Font.GothamSemibold
     TabButton.TextSize = 11
     Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 6)
@@ -211,7 +211,7 @@ local function createTab(tabName)
     TabButton.Activated:Connect(function()
         for _, tab in pairs(tabsList) do
             tab.page.Visible = false
-            tab.btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+            tab.btn.TextColor3 = Color3.fromRGB(47, 53, 66)
         end
         TabPage.Visible = true
         TabButton.TextColor3 = Color3.fromRGB(0, 255, 200)
@@ -227,9 +227,9 @@ local MiscPage = createTab("Misc")
 local function addToggle(name, prop, parentPage, callback)
     local Btn = Instance.new("TextButton", parentPage)
     Btn.Size = UDim2.new(1, -5, 0, 40)
-    Btn.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
+    Btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Btn.Text = "  " .. name .. ": OFF"
-    Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Btn.TextColor3 = Color3.fromRGB(47, 53, 66)
     Btn.Font = Enum.Font.GothamSemibold
     Btn.TextSize = 11
     Btn.TextXAlignment = Enum.TextXAlignment.Left
@@ -239,7 +239,7 @@ local function addToggle(name, prop, parentPage, callback)
         getgenv().AternityConfig[prop] = not getgenv().AternityConfig[prop]
         local state = getgenv().AternityConfig[prop]
         Btn.Text = state and "  " .. name .. ": ON" or "  " .. name .. ": OFF"
-        Btn.TextColor3 = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(200, 200, 200)
+        Btn.TextColor3 = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(47, 53, 66)
         if callback then callback(state) end
     end)
 end
@@ -263,7 +263,7 @@ local function EquipWeapon()
     end)
 end
 
--- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ СИНХРОНИЗИРОВАННОГО АВТОФАРМА
+-- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ СИНХРОНИЗИРОВАННОГО АВТОФАРМА (TIKI ВЕРИФИКАЦИЯ)
 addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
     task.spawn(function()
         while getgenv().AternityConfig.AutoFarm do
@@ -272,17 +272,17 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 local character = player.Character
                 local root = character and character:FindFirstChild("HumanoidRootPart")
                 if not root then return end
-                
+
                 local mainGui = player.PlayerGui:FindFirstChild("Main")
                 local hasQuest = mainGui and mainGui:FindFirstChild("Quest") and mainGui.Quest.Visible
                 local currentTarget = GetMyTargetMob()
-                
+
                 if not hasQuest then
                     -- 1. Летим к Tiki Quest Giver на аванпост
                     local npc = FindValidTarget(currentTarget.QuestNPC)
                     if npc then
                         SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
-                        task.wait(0.3)
+                        task.wait(0.5) -- Оптимальная задержка перед диалогом
                         fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
                     end
                 else
@@ -299,14 +299,12 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                         
                         while getgenv().AternityConfig.AutoFarm and mob.Humanoid.Health > 0 and mainGui.Quest.Visible do
                             SecureTeleport(farmPos)
-                            -- Сетевое стягивание пачки
-                            local enemyFolder = workspace:FindFirstChild("Enemies")
-                            if enemyFolder then
-                                for _, obj in pairs(enemyFolder:GetChildren()) do
-                                    if obj.Name == currentTarget.Name and obj:FindFirstChild("HumanoidRootPart") then
-                                        obj.HumanoidRootPart.CanCollide = false
-                                        obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame
-                                    end
+                            -- Стабилизированное стягивание пачки
+                            local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
+                            for _, obj in pairs(enemyFolder:GetChildren()) do
+                                if obj.Name == currentTarget.Name and obj:FindFirstChild("HumanoidRootPart") then
+                                    obj.HumanoidRootPart.CanCollide = false
+                                    obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame
                                 end
                             end
                             task.wait()
@@ -320,7 +318,7 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                     end
                 end
             end)
-            task.wait(0.3)
+            task.wait(0.4)
         end
         pcall(function() 
             game.Players.LocalPlayer.Character.Humanoid.PlatformStand = false 
@@ -363,7 +361,7 @@ addToggle("Teleport To Chests", "AutoChest", MiscPage, function(state)
     end)
 end)
 
-tabsList[1].page.Visible = true
-tabsList[1].btn.TextColor3 = Color3.fromRGB(0, 255, 200)
+tabsList.page.Visible = true
+tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Сборка v4.3 успешно запущена в Xeno!")
+print("[ATERNITY] Сборка v4.4 для аванпоста Tiki успешно запущена!")
