@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v4.9)           --
---         ФИНАЛЬНЫЙ СТАБИЛЬНЫЙ МАГНИТ МОБОВ | ЛЕГАЛЬНЫЙ АВТОКВЕСТ ТИКИ  --
+--                       ATERNITY HUB — REBORN EDITION (v5.0)           --
+--         ФИКС ПРЕПЯТСТВИЙ И СТЯГИВАНИЯ МОБОВ | СТАБИЛЬНЫЙ ФАРМ        --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -8,7 +8,7 @@ getgenv().AternityConfig = {
     AutoClick = false,
     AutoChest = false,
     SelectedWeapon = "Blox Fruit",
-    FlightSpeed = 260
+    FlightSpeed = 280
 }
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -23,7 +23,7 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- АБСОЛЮТНО ТОЧНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА БЕЗ ПРИВЯЗКИ К МОРЯМ
+-- БАЗА ДАННЫХ ЛЕВЕЛИНГА
 local AllQuestsData = {
     {MinLvl = 1, MaxLvl = 9, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1},
     {MinLvl = 10, MaxLvl = 14, Name = "Monkey", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 1},
@@ -48,7 +48,7 @@ local function GetMyTargetMob()
     return AllQuestsData[#AllQuestsData]
 end
 
--- СИСТЕМА ФИЗИЧЕСКОГО ПОЛЕТА (ОБХОД КИКА СЕРВЕРА 267)
+-- ВЫСОТНЫЙ БЕЗОПАСНЫЙ ПОЛЕТ (ОБХОД СТЕН И КИКА 267)
 local function SecureTeleport(targetCFrame)
     local player = game.Players.LocalPlayer
     local character = player.Character
@@ -83,14 +83,20 @@ local function SecureTeleport(targetCFrame)
     platform.CanCollide = true
     platform.Parent = workspace
 
+    -- Алгоритм обхода препятствий: взлетаем выше зданий перед горизонтальным полетом
+    local highPos = Vector3.new(root.Position.X, targetCFrame.Position.Y + 120, root.Position.Z)
+    root.CFrame = CFrame.new(highPos)
+
     while getgenv().AternityConfig.AutoFarm or getgenv().AternityConfig.AutoChest do
         if not root or not root.Parent then break end
-        local currentDist = (root.Position - targetCFrame.Position).Magnitude
+        local flatTarget = Vector3.new(targetCFrame.Position.X, root.Position.Y, targetCFrame.Position.Z)
+        local currentDist = (root.Position - flatTarget).Magnitude
+        
         if currentDist < 15 then break end
 
-        local dir = (targetCFrame.Position - root.Position).Unit
+        local dir = (flatTarget - root.Position).Unit
         bv.Velocity = dir * getgenv().AternityConfig.FlightSpeed
-        bg.CFrame = CFrame.lookAt(root.Position, targetCFrame.Position)
+        bg.CFrame = CFrame.lookAt(root.Position, flatTarget)
         platform.CFrame = root.CFrame * CFrame.new(0, -3.5, 0)
         task.wait()
     end
@@ -142,7 +148,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v4.9 [Tiki Magnet Release]"
+Title.Text = "ATERNITY HUB v5.0 [Perfect Farm]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -231,7 +237,7 @@ local function EquipWeapon()
     end)
 end
 
--- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ БЕЗУПРЕЧНОГО АВТОФАРМА С МАГНИТОМ МОБОВ
+-- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ БЕЗУПРЕЧНОГО АВТОФАРМА
 addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
     task.spawn(function()
         while getgenv().AternityConfig.AutoFarm do
@@ -246,20 +252,18 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 local currentTarget = GetMyTargetMob()
 
                 if not hasQuest then
-                    -- 1. ЛЕГАЛЬНЫЙ КЛИК-АВТОКВЕСТ (Долет и эмуляция клика диалога)
+                    -- 1. Подлетаем сверху к Tiki Quest Giver 1
                     local npc = FindValidTarget(currentTarget.QuestNPC)
                     if npc then
                         SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
-                        task.wait(0.4)
-                        -- Имитируем физическое нажатие на NPC для открытия меню квестов
+                        task.wait(0.5)
                         fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
-                        task.wait(0.4)
+                        task.wait(0.5)
                     end
                 else
-                    -- 2. КВЕСТ АКТИВЕН. Включаем магнитную зачистку локации
+                    -- 2. КВЕСТ УСПЕШНО ВЗЯТ. Включаем магнитную чистку локации
                     local mob = FindValidTarget(currentTarget.Name)
                     if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
-                        -- Отключаем коллизии и атакующие анимации у базового моба
                         mob.HumanoidRootPart.CanCollide = false
                         if mob:FindFirstChild("AttackParts") then 
                             mob.AttackParts:Destroy() 
@@ -270,19 +274,19 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                         
                         while getgenv().AternityConfig.AutoFarm and mob.Humanoid.Health > 0 and mainGui.Quest.Visible do
                             SecureTeleport(farmPos)
-                            -- ПРАВИЛЬНОЕ ПЛАВНОЕ СТЯГИВАНИЕ (БЕЗ ШВЫРЯНИЯ): Сброс импульса + Фиксация координат
+                            -- ИСПРАВЛЕННЫЙ ФИКС СТАТИЧНОГО СТАКАНА МОБОВ (БЕЗ ШВЫРЯНИЯ ОБ СТЕНЫ)
                             local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
                             for _, obj in pairs(enemyFolder:GetChildren()) do
-                                if string.find(obj.Value.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
+                                if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
                                     obj.HumanoidRootPart.CanCollide = false
-                                    obj.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Гасим скорость, чтобы мобы не разлетались
-                                    obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame -- Стягиваем строго в одну точку
+                                    obj.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Обнуляем скорость
+                                    obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame -- Притягиваем строго в кучу
                                 end
                             end
                             task.wait()
                         end
                     else
-                        -- Спот пуст, летим караулить спавн Isle Outlaw
+                        -- Спот пуст, взлетаем над зданиями караулить спавн Isle Outlaw
                         SecureTeleport(CFrame.new(-16450, 45, -15220))
                     end
                 end
@@ -333,4 +337,4 @@ end)
 tabsList.page.Visible = true
 tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Финальная стабильная сборка v4.9 запущена!")
+print("[ATERNITY] Сборка v5.0 успешно запущена в Xeno!")
