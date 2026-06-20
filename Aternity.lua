@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v4.7)           --
---         100% ФИКС СБРОСА НА MONKEYS | TIKI OUTPOST АВТОФАРМ          --
+--                       ATERNITY HUB — REBORN EDITION (v4.8)           --
+--         ФИКС TIKI QUEST GIVER 1 | СТАБИЛЬНЫЙ ЦИКЛ ФАРМА ПО УРОВНЮ    --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -23,46 +23,38 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- АБСОЛЮТНО ТОЧНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА БЕЗ ПРИВЯЗКИ К МОРЯМ
+-- ЛИНЕЙНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА (СТРОГИЙ ФИКС ДЛЯ TIKI OUTPOST)
 local AllQuestsData = {
     -- 1 Sea
-    {MinLvl = 1, MaxLvl = 9, Name = "Bandit", Quest = "BanditQuest", QuestID = 1},
-    {MinLvl = 10, MaxLvl = 14, Name = "Monkey", Quest = "JungleQuest", QuestID = 1},
-    {MinLvl = 15, MaxLvl = 29, Name = "Gorilla", Quest = "JungleQuest", QuestID = 2},
+    {MinLvl = 1, MaxLvl = 9, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1},
+    {MinLvl = 10, MaxLvl = 14, Name = "Monkey", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 1},
     
     -- 2 Sea
-    {MinLvl = 700, MaxLvl = 774, Name = "Raider", Quest = "Area1Quest", QuestID = 1},
-    {MinLvl = 775, MaxLvl = 874, Name = "Mercenary", Quest = "Area2Quest", QuestID = 1},
+    {MinLvl = 700, MaxLvl = 774, Name = "Raider", QuestNPC = "Quest Giver", Quest = "Area1Quest", QuestID = 1},
     
-    -- 3 Sea (Включая точные данные для Tiki Outpost)
-    {MinLvl = 1500, MaxLvl = 1574, Name = "Pirate Millionaire", Quest = "PortTownQuest", QuestID = 1},
+    -- 3 Sea
+    {MinLvl = 1500, MaxLvl = 1574, Name = "Pirate Millionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 1},
     
-    -- СТРОГИЙ ФИКС ДЛЯ ВАШЕГО ТЕКУЩЕГО УРОВНЯ (2461 LVL) НА АВАНПОСТЕ TIKI
-    {MinLvl = 2450, MaxLvl = 2524, Name = "Isle Outlaw", Quest = "TikiOutpostQuest", QuestID = 1},
-    {MinLvl = 2525, MaxLvl = 2599, Name = "Island Boy", Quest = "TikiOutpostQuest", QuestID = 2},
+    -- ВАШ ТЕКУЩИЙ УРОВЕНЬ (2461 LVL) НА АВАНПОСТЕ TIKI С ТОЧНЫМ NPC И ID КВЕСТА
+    {MinLvl = 2450, MaxLvl = 2524, Name = "Isle Outlaw", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 1},
+    {MinLvl = 2525, MaxLvl = 2599, Name = "Island Boy", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 2},
     
-    -- Эндгейм зоны до 2800 уровня
-    {MinLvl = 2700, MaxLvl = 2749, Name = "Prehistoric Warrior", Quest = "PrehistoricQuest", QuestID = 1},
-    {MinLvl = 2750, MaxLvl = 2799, Name = "Ancient Guardian", Quest = "GuardianQuest", QuestID = 1},
-    {MinLvl = 2800, MaxLvl = 9999, Name = "Aternity Abyss Slayer", Quest = "AbyssQuest", QuestID = 1}
+    -- Эндгейм
+    {MinLvl = 2800, MaxLvl = 9999, Name = "Aternity Abyss Slayer", QuestNPC = "Abyss Quest Giver", Quest = "AbyssQuest", QuestID = 1}
 }
 
--- Динамическая функция выбора моба на основе линейного уровня, исключающая сброс квестов
+-- Динамический подбор моба по уровню
 local function GetMyTargetMob()
     local myLevel = game.Players.LocalPlayer.Data.Level.Value
-    local fallbackTarget = AllQuestsData[1] -- Страховочный вариант
-    
     for _, mob in ipairs(AllQuestsData) do
         if myLevel >= mob.MinLvl and myLevel <= mob.MaxLvl then 
             return mob
         end
     end
-    
-    -- Если уровень выше максимального в таблице, фармим последнего доступного моба
     return AllQuestsData[#AllQuestsData]
 end
 
--- НАДЕЖНЫЙ ФИЗИЧЕСКИЙ ПОЛЕТ (BODYVELOCITY-БАЙПАС)
+-- СИСТЕМА ФИЗИЧЕСКОГО ПОЛЕТА ИЗ ВЕРСИИ 3.7 (ОБХОД КИКА СЕРВЕРА 267)
 local function SecureTeleport(targetCFrame)
     local player = game.Players.LocalPlayer
     local character = player.Character
@@ -116,25 +108,24 @@ local function SecureTeleport(targetCFrame)
     root.CFrame = targetCFrame
 end
 
--- Поиск мобов на карте
-local function FindValidEnemy(name)
-    local enemyFolder = workspace:FindFirstChild("Enemies")
-    if enemyFolder then
-        for _, enemy in pairs(enemyFolder:GetChildren()) do
-            if string.find(enemy.Name, name) and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
-                return enemy
-            end
+-- Надежный поиск целей на карте
+local function FindValidTarget(name)
+    local locations = {workspace, workspace:FindFirstChild("NPCs"), workspace:FindFirstChild("Enemies")}
+    for _, folder in pairs(locations) do
+        if folder then
+            local found = folder:FindFirstChild(name)
+            if found and found:FindFirstChild("HumanoidRootPart") then return found end
         end
     end
-    for _, obj in pairs(workspace:GetChildren()) do
-        if string.find(obj.Name, name) and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 and obj:FindFirstChild("HumanoidRootPart") then
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj.Name == name and obj:FindFirstChild("HumanoidRootPart") then
             return obj
         end
     end
     return nil
 end
 
--- ИНИЦИАЛИЗАЦИЯ UI
+-- ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AternityHubReborn"
 ScreenGui.ResetOnSpawn = false
@@ -157,7 +148,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v4.7 [Tiki Level Fix]"
+Title.Text = "ATERNITY HUB v4.8 [Tiki Outpost Fix]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -246,7 +237,7 @@ local function EquipWeapon()
     end)
 end
 
--- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ ОБНОВЛЕННОГО АВТОФАРМА
+-- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ НАДЁЖНОГО АВТОФАРМА С ПОЛЕТОМ К NPC
 addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
     task.spawn(function()
         while getgenv().AternityConfig.AutoFarm do
@@ -261,13 +252,18 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 local currentTarget = GetMyTargetMob()
 
                 if not hasQuest then
-                    -- МГНОВЕННЫЙ ВПРЫСК КВЕСТА: теперь отправляется строго под уровень 2461 (TikiOutpostQuest)
-                    fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
-                    task.wait(0.5)
+                    -- 1. Сначала физически летим к Tiki Quest Giver 1
+                    local npc = FindValidTarget(currentTarget.QuestNPC)
+                    if npc then
+                        SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
+                        task.wait(0.5)
+                        -- Легальный диалог и активация контракта
+                        fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
+                    end
                 else
-                    -- Квест активен, уничтожаем Isle Outlaw
-                    local mob = FindValidEnemy(currentTarget.Name)
-                    if mob then
+                    -- 2. Квест успешно взят, летим в зону фарма Isle Outlaw
+                    local mob = FindValidTarget(currentTarget.Name)
+                    if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
                         mob.HumanoidRootPart.CanCollide = false
                         if mob:FindFirstChild("AttackParts") then 
                             mob.AttackParts:Destroy() 
@@ -278,7 +274,7 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                         
                         while getgenv().AternityConfig.AutoFarm and mob.Humanoid.Health > 0 and mainGui.Quest.Visible do
                             SecureTeleport(farmPos)
-                            -- Сетевое стягивание пачки
+                            -- Сетевое стягивание пачки мобов под вас
                             local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
                             for _, obj in pairs(enemyFolder:GetChildren()) do
                                 if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") then
@@ -289,7 +285,7 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                             task.wait()
                         end
                     else
-                        -- Физические координаты спота Isle Outlaw на Tiki Outpost
+                        -- Страховочный долет к физическим координатам спота Isle Outlaw на Tiki Outpost
                         SecureTeleport(CFrame.new(-16450, 45, -15220))
                     end
                 end
@@ -340,4 +336,4 @@ end)
 tabsList.page.Visible = true
 tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Сборка v4.7 успешно инициализирована!")
+print("[ATERNITY] Релизная сборка v4.8 успешно запущена в Xeno!")
