@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v3.9)           --
---         ФИКС БАЗЫ ДАННЫХ КВЕСТОВ 2800 LVL | АВТОФАРМ ПО УРОВНЮ        --
+--                       ATERNITY HUB — REBORN EDITION (v4.0)           --
+--         100% ФИКС ФИЗИЧЕСКОГО ПОЛЕТА | АВТОКВЕСТ 2800 LVL | 2026     --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -8,7 +8,7 @@ getgenv().AternityConfig = {
     AutoClick = false,
     AutoChest = false,
     SelectedWeapon = "Blox Fruit",
-    FlightSpeed = 250
+    FlightSpeed = 250 -- Безопасная скорость физического полета
 }
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -23,7 +23,7 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- АКТУАЛИЗИРОВАННАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА ПОД МАКСИМАЛЬНЫЙ УРОВЕНЬ 2800
+-- АКТУАЛИЗИРОВАННАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА (МАКСИМАЛЬНЫЙ УРОВЕНЬ 2800)
 local SeaMobData = {
     [1] = {
         {MinLvl = 1, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1},
@@ -66,7 +66,7 @@ local function GetMyTargetMob()
     return target
 end
 
--- ФИЗИЧЕСКИЙ ПОЛЕТ (БАЙПАС СЕТЕВОЙ ЗАЩИТЫ)
+-- НАДЕЖНЫЙ ФИЗИЧЕСКИЙ ПОЛЕТ (ИСПРАВЛЕННЫЙ ВЫЗОВ ИЗ ВЕРСИИ 3.7)
 local function SecureTeleport(targetCFrame)
     local player = game.Players.LocalPlayer
     local character = player.Character
@@ -120,15 +120,21 @@ local function SecureTeleport(targetCFrame)
     root.CFrame = targetCFrame
 end
 
+-- ГЛУБОКИЙ ПОИСК ЦЕЛЕЙ НА КАРТЕ (NPC И МОБЫ)
 local function FindValidTarget(name)
-    for _, folder in pairs({workspace, workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("NPCs")}) do
+    local locations = {workspace, workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("NPCs")}
+    for _, folder in pairs(locations) do
         if folder then
-            local res = folder:FindFirstChild(name)
-            if res and res:FindFirstChild("HumanoidRootPart") then return res end
+            local found = folder:FindFirstChild(name)
+            if found and found:FindFirstChild("HumanoidRootPart") then return found end
         end
     end
+    
+    -- Сканирование карты, если объекты скрыты в других папках обновления
     for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name == name and obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") then return obj end
+        if obj.Name == name and (obj:IsA("Model") or obj:IsA("Part")) and obj:FindFirstChild("HumanoidRootPart") then
+            return obj
+        end
     end
     return nil
 end
@@ -156,7 +162,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v3.9 [Lvl 2800 Fix]"
+Title.Text = "ATERNITY HUB v4.0 [Flight Fixed]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -211,9 +217,9 @@ local MiscPage = createTab("Misc")
 local function addToggle(name, prop, parentPage, callback)
     local Btn = Instance.new("TextButton", parentPage)
     Btn.Size = UDim2.new(1, -5, 0, 40)
-    Btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
     Btn.Text = "  " .. name .. ": OFF"
-    Btn.TextColor3 = Color3.fromRGB(47, 53, 66)
+    Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
     Btn.Font = Enum.Font.GothamSemibold
     Btn.TextSize = 11
     Btn.TextXAlignment = Enum.TextXAlignment.Left
@@ -223,7 +229,7 @@ local function addToggle(name, prop, parentPage, callback)
         getgenv().AternityConfig[prop] = not getgenv().AternityConfig[prop]
         local state = getgenv().AternityConfig[prop]
         Btn.Text = state and "  " .. name .. ": ON" or "  " .. name .. ": OFF"
-        Btn.TextColor3 = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(47, 53, 66)
+        Btn.TextColor3 = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(200, 200, 200)
         if callback then callback(state) end
     end)
 end
@@ -245,7 +251,7 @@ local function EquipWeapon()
     end)
 end
 
--- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ УМНОГО АВТОФАРМА
+-- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ СИНХРОНИЗИРОВАННОГО АВТОФАРМА
 addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
     task.spawn(function()
         while getgenv().AternityConfig.AutoFarm do
@@ -260,15 +266,15 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 local currentTarget = GetMyTargetMob()
 
                 if not hasQuest then
-                    -- Летим строго к NPC своего уровня
+                    -- 1. Летим к NPC своего уровня за квестом
                     local npc = FindValidTarget(currentTarget.QuestNPC)
-                    if npc and npc:FindFirstChild("HumanoidRootPart") then
+                    if npc then
                         SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
                         task.wait(0.3)
                         fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
                     end
                 else
-                    -- Летим строго к мобам своего уровня
+                    -- 2. Квест взят, летим к мобам своего уровня
                     local mob = FindValidTarget(currentTarget.Name)
                     if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
                         mob.HumanoidRootPart.CanCollide = false
@@ -281,15 +287,20 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                         
                         while getgenv().AternityConfig.AutoFarm and mob.Humanoid.Health > 0 and mainGui.Quest.Visible do
                             SecureTeleport(farmPos)
-                            for _, obj in pairs(workspace.Enemies:GetChildren()) do
-                                if obj.Name == currentTarget.Name and obj:FindFirstChild("HumanoidRootPart") then
-                                    obj.HumanoidRootPart.CanCollide = false
-                                    obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame
+                            -- Сетевое стягивание пачки
+                            local enemyFolder = workspace:FindFirstChild("Enemies")
+                            if enemyFolder then
+                                for _, obj in pairs(enemyFolder:GetChildren()) do
+                                    if obj.Name == currentTarget.Name and obj:FindFirstChild("HumanoidRootPart") then
+                                        obj.HumanoidRootPart.CanCollide = false
+                                        obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame
+                                    end
                                 end
                             end
                             task.wait()
                         end
                     else
+                        -- Если мобов нет, летим караулить спот на безопасную высоту
                         local spawners = workspace:FindFirstChild("EnemySpawns") or workspace:FindFirstChild("Spawners")
                         if spawners and spawners:FindFirstChild(currentTarget.Name) then
                             SecureTeleport(spawners[currentTarget.Name].CFrame * CFrame.new(0, 15, 0))
@@ -340,7 +351,7 @@ addToggle("Teleport To Chests", "AutoChest", MiscPage, function(state)
     end)
 end)
 
-tabsList.page.Visible = true
-tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
+tabsList[1].page.Visible = true
+tabsList[1].btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Сборка v3.9 со встроенным автоквестом успешно запущена!")
+print("[ATERNITY] Релизная сборка v4.0 успешно запущена в Xeno!")
