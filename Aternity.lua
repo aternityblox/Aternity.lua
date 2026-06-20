@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v7.5)           --
---         АНТИ-ОТКИДЫВАНИЕ ЗА КАРТУ | СТАБИЛЬНЫЙ ПРИЗРАЧНЫЙ МАГНИТ     --
+--                       ATERNITY HUB — REBORN EDITION (v8.0)           --
+--         ФИНАЛЬНЫЙ ЦИКЛИЧНЫЙ АВТОФАРМ | ФИКС СПОТА TIKI OUTPOST       --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -23,18 +23,32 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- ЛИНЕЙНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА
+-- ЛИНЕЙНАЯ БАЗА ДАННЫХ С ТОЧНЫМИ КООРДИНАТАМИ СПОТОВ (TIKI OUTPOST РЕЛИЗ)
 local AllQuestsData = {
-    {MinLvl = 1, MaxLvl = 9, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1},
-    {MinLvl = 10, MaxLvl = 14, Name = "Monkey", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 1},
-    {MinLvl = 700, MaxLvl = 774, Name = "Raider", QuestNPC = "Quest Giver", Quest = "Area1Quest", QuestID = 1},
-    {MinLvl = 1500, MaxLvl = 1574, Name = "Pirate Millionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 1},
+    {MinLvl = 1, MaxLvl = 9, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1, Spot = CFrame.new(1050, 20, 1400)},
+    {MinLvl = 10, MaxLvl = 14, Name = "Monkey", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 1, Spot = CFrame.new(-1400, 30, 200)},
     
-    -- ИСПРАВЛЕННЫЙ ДИАПАЗОН TIKI OUTPOST (УРОВЕНЬ 2461)
-    {MinLvl = 2450, MaxLvl = 2524, Name = "Isle Outlaw", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 1},
-    {MinLvl = 2525, MaxLvl = 2599, Name = "Island Boy", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 2},
+    -- СТРОГИЙ ФИКС ДЛЯ ВАШЕГО ТЕКУЩЕГО УРОВНЯ НА АВАНПОСТЕ TIKI (2461 LVL)
+    {
+        MinLvl = 2450, 
+        MaxLvl = 2524, 
+        Name = "Isle Outlaw", 
+        QuestNPC = "Tiki Quest Giver 1", 
+        Quest = "TikiOutpostQuest", 
+        QuestID = 1, 
+        Spot = CFrame.new(-16450, 45, -15220) -- Точный геометрический центр спота Isle Outlaw
+    },
+    {
+        MinLvl = 2525, 
+        MaxLvl = 2599, 
+        Name = "Island Boy", 
+        QuestNPC = "Tiki Quest Giver 1", 
+        Quest = "TikiOutpostQuest", 
+        QuestID = 2, 
+        Spot = CFrame.new(-16600, 45, -15400)
+    },
     
-    {MinLvl = 2800, MaxLvl = 9999, Name = "Aternity Abyss Slayer", QuestNPC = "Abyss Quest Giver", Quest = "AbyssQuest", QuestID = 1}
+    {MinLvl = 2800, MaxLvl = 9999, Name = "Aternity Abyss Slayer", QuestNPC = "Abyss Quest Giver", Quest = "AbyssQuest", QuestID = 1, Spot = CFrame.new(-17000, 50, -16000)}
 }
 
 local function GetMyTargetMob()
@@ -47,7 +61,7 @@ local function GetMyTargetMob()
     return AllQuestsData[#AllQuestsData]
 end
 
--- ЖЕСТКАЯ ФИКСАЦИЯ ИГРОКА (ПОЛНЫЙ ИММУНИТЕТ ОТ ВЫЛЕТОВ ЗА КАРТУ)
+-- ИЗОЛИРОВАННАЯ ФУНКЦИЯ ВЫСОТНОГО ПОЛЕТА (БЕЗ РАССИНХРОНИЗАЦИИ КООРДИНАТ)
 local function SecureTeleport(targetCFrame)
     local player = game.Players.LocalPlayer
     local character = player.Character
@@ -76,11 +90,10 @@ local function SecureTeleport(targetCFrame)
     bg.CFrame = root.CFrame
     bg.Parent = root
 
-    -- Силовой якорь для удержания игрока на месте во время коллизий мобов
     local bp = Instance.new("BodyPosition")
     bp.Name = "AternityAnchor"
     bp.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    bp.P = 15000
+    bp.P = 20000
     bp.Position = targetCFrame.Position
     bp.Parent = root
 
@@ -91,7 +104,7 @@ local function SecureTeleport(targetCFrame)
     platform.CanCollide = true
     platform.Parent = workspace
 
-    local startHighPos = Vector3.new(root.Position.X, targetCFrame.Position.Y + 130, root.Position.Z)
+    local startHighPos = Vector3.new(root.Position.X, targetCFrame.Position.Y + 120, root.Position.Z)
     root.CFrame = CFrame.new(startHighPos)
     task.wait(0.05)
 
@@ -111,7 +124,7 @@ local function SecureTeleport(targetCFrame)
 
     bv:Destroy()
     bg:Destroy()
-    bp.Position = targetCFrame.Position -- Приковываем к финальной точке фарма
+    bp.Position = targetCFrame.Position
     platform:Destroy()
     root.Velocity = Vector3.new(0, 0, 0)
     root.CFrame = targetCFrame
@@ -156,7 +169,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v7.5 [Immortal Overlord]"
+Title.Text = "ATERNITY HUB v8.0 [Tiki Final]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -245,7 +258,7 @@ local function EquipWeapon()
     end)
 end
 
--- ИСПОЛНИТЕЛЬНЫЙ ДВИЖОК АВТОФАРМА И АНТИ-ОТКИДЫВАНИЯ
+-- ЦИКЛИЧНЫЙ ДВИЖОК СТАБИЛЬНОГО АВТОФАРМА (SPOT-ANCHORED SYSTEM)
 addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
     task.spawn(function()
         while getgenv().AternityConfig.AutoFarm do
@@ -260,6 +273,7 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 local currentTarget = GetMyTargetMob()
 
                 if not hasQuest then
+                    -- ШАГ 1: Летим к NPC за квестом
                     local npc = FindValidTarget(currentTarget.QuestNPC)
                     if npc then
                         SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
@@ -268,46 +282,51 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                         task.wait(0.3)
                     end
                 else
-                    local mob = FindValidTarget(currentTarget.Name)
-                    if mob and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-                        
-                        -- ОПТИМАЛЬНАЯ ЗОНА НАД МОБАМИ
-                        local farmPos = mob.HumanoidRootPart.CFrame * CFrame.new(0, 7.5, 0)
-                        SecureTeleport(farmPos)
-                        
-                        character.Humanoid.PlatformStand = true
-                        
-                        -- БЕЗОПАСНЫЙ СЕТЕВОЙ МАГНИТ КЛИЕНТСКИХ СИЛ (БЕЗ ШВЫРЯНИЯ)
+                    -- ШАГ 2: Квест взят. Персонаж летит строго на геометрический центр спота
+                    local farmPosition = currentTarget.Spot * CFrame.new(0, 7.5, 0) -- Висим над спотом
+                    SecureTeleport(farmPosition)
+                    
+                    character.Humanoid.PlatformStand = true
+                    
+                    -- Запускаем непрерывный силовой магнит мобов в эту точку
+                    while getgenv().AternityConfig.AutoFarm and mainGui.Quest.Visible do
                         local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
+                        local hasMobsOnSpot = false
+                        
                         for _, obj in pairs(enemyFolder:GetChildren()) do
                             if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
+                                hasMobsOnSpot = true
                                 obj.HumanoidRootPart.CanCollide = false
                                 
-                                -- Вместо обнуления координат CFrame, мы полностью блокируем их собственную скорость
+                                -- Стягиваем мобов строго под координаты игрока на землю
                                 obj.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
-                                obj.HumanoidRootPart.RotVelocity = Vector3.new(0, 0, 0)
+                                obj.HumanoidRootPart.CFrame = currentTarget.Spot
                                 
-                                -- Направляем плавный силовой вектор к базовому мобу
-                                local direction = (mob.HumanoidRootPart.Position - obj.HumanoidRootPart.Position)
-                                obj.HumanoidRootPart.Velocity = direction * 15
-                                
-                                -- Активация гигантского хитбокса 25 блоков для 100% досягаемости атак
+                                -- Раздуваем хитбокс до 35 блоков, чтобы задевать всю пачку одновременно
                                 if obj.HumanoidRootPart:IsA("Part") or obj.HumanoidRootPart:IsA("MeshPart") then
-                                    obj.HumanoidRootPart.Size = Vector3.new(25, 25, 25)
+                                    obj.HumanoidRootPart.Size = Vector3.new(35, 35, 35)
                                     obj.HumanoidRootPart.Transparency = 0.85
                                 end
-                                
                                 if obj:FindFirstChild("AttackParts") then 
                                     obj.AttackParts:Destroy() 
                                 end
                             end
                         end
-                    else
-                        SecureTeleport(CFrame.new(-16450, 45, -15220))
+                        
+                        -- Если пачка полностью зачищена и мы ждем респавна мобов
+                        if not hasMobsOnSpot then
+                            -- Возвращаемся караулить к боту, чтобы не стоять в пустой зоне
+                            local npc = FindValidTarget(currentTarget.QuestNPC)
+                            if npc then 
+                                SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0)) 
+                            end
+                            task.wait(1)
+                        end
+                        game:GetService("RunService").Heartbeat:Wait()
                     end
                 end
             end)
-            game:GetService("RunService").Heartbeat:Wait()
+            task.wait(0.3)
         end
         -- Очистка силового якоря игрока при выключении
         pcall(function()
@@ -357,4 +376,4 @@ end)
 tabsList.page.Visible = true
 tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Сборка v7.5 Успешно запущена!")
+print("[ATERNITY] Релиз финальной стабильной сборки v8.0 запущен!")
