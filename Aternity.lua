@@ -290,3 +290,268 @@ AddToggle(TeleportPage, "Render Items & Chests 3D ESP", "VisualESP", nil)
 AddToggle(SettingsPage, "Auto Allocate Level Points", "AutoStats", nil)
 
 print("[ATERNITY STEP 4] Интерактивные тумблеры и базы данных успешно инициализированы.")
+--======================================================================--
+--                       Шаг 5 из 5: СЕТЕВЫЕ И ФИЗИЧЕСКИЕ ДВИЖКИ        --
+--======================================================================--
+
+-- 1. СЕТЕВОЙ ОПТИМИЗАТОР ПАКЕТОВ УДАРОВ (KILL AURA)
+local function executeFastAttack()
+    pcall(function()
+        local currentTarget = GetMyTargetMob()
+        local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
+        for _, obj in pairs(enemyFolder:GetChildren()) do
+            if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
+                local combatEvent = game:GetService("ReplicatedStorage"):FindFirstChild("RigControllerEvent")
+                if combatEvent then
+                    -- Отправка пакетов нанесения урона без замаха
+                    combatEvent:FireServer("weaponChange")
+                    combatEvent:FireServer("hit", obj.HumanoidRootPart, 1)
+                    combatEvent:FireServer("hit", obj.HumanoidRootPart, 2)
+                end
+            end
+        end
+    end)
+end
+
+task.spawn(function()
+    while true do
+        if getgenv().AternityConfig.FastAttack and getgenv().AternityConfig.AutoFarm then
+            executeFastAttack()
+            RunService.Heartbeat:Wait()
+        else
+            task.wait(0.2)
+        end
+    end
+end)
+
+-- 2. СИСТЕМА УНИВЕРСАЛЬНОГО ВЫСОТНОГО ПОЛЕТА (АНТИ-КИК БАЙПАС)
+local function SecureTeleport(targetCFrame)
+    local character = LocalPlayer.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local dist = (root.Position - targetCFrame.Position).Magnitude
+    if dist < 25 then
+        root.CFrame = targetCFrame
+        return
+    end
+
+    if root:FindFirstChild("AternityVelocity") then root.AternityVelocity:Destroy() end
+    if root:FindFirstChild("AternityGyro") then root.AternityGyro:Destroy() end
+
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = "AternityVelocity"
+    bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    bv.Velocity = Vector3.new(0, 0, 0)
+    bv.Parent = root
+
+    local bg = Instance.new("BodyGyro")
+    bg.Name = "AternityGyro"
+    bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bg.CFrame = root.CFrame
+    bg.Parent = root
+
+    local platform = Instance.new("Part")
+    platform.Size = Vector3.new(10, 1, 10)
+    platform.Transparency = 1
+    platform.Anchored = true
+    platform.CanCollide = true
+    platform.Parent = workspace
+
+    -- Подброс персонажа выше построек острова
+    local startHighPos = Vector3.new(root.Position.X, targetCFrame.Position.Y + 120, root.Position.Z)
+    root.CFrame = CFrame.new(startHighPos)
+    task.wait(0.05)
+
+    while getgenv().AternityConfig.AutoFarm or getgenv().AternityConfig.AutoChest do
+        local flatTarget = Vector3.new(targetCFrame.Position.X, root.Position.Y, targetCFrame.Position.Z)
+        local currentDist = (root.Position - flatTarget).Magnitude
+        
+        if currentDist < 12 then break end
+
+        local dir = (flatTarget - root.Position).Unit
+        bv.Velocity = dir * getgenv().AternityConfig.FlightSpeed
+        bg.CFrame = CFrame.lookAt(root.Position, flatTarget)
+        platform.CFrame = root.CFrame * CFrame.new(0, -3.5, 0)
+        RunService.Heartbeat:Wait()
+    end
+
+    bv:Destroy()
+    bg:Destroy()
+    platform:Destroy()
+    root.Velocity = Vector3.new(0, 0, 0)
+    root.CFrame = targetCFrame
+end
+
+-- 3. АВТОМАТИЧЕСКАЯ ЭКИПИРОВКА ОРУЖИЯ
+local function EquipWeapon()
+    pcall(function()
+        local character = LocalPlayer.Character
+        if not character or not character:FindFirstChild("Humanoid") then return end
+        for _, tool in pairs(character:GetChildren()) do
+            if tool:IsA("Tool") and (tool.Name == getgenv().AternityConfig.SelectedWeapon or string.find(tool.Name, "Fruit")) then return end
+        end
+        for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
+            if tool:IsA("Tool") and (tool.Name == getgenv().AternityConfig.SelectedWeapon or string.find(tool.Name, "Fruit")) then
+                character.Humanoid:EquipTool(tool)
+                break
+            end
+        end
+    end)
+end
+
+-- 4. ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ ЦИКЛИЧНОГО АВТОФАРМА И СПОТ-МАГНИТА
+function runMainAutomationLoop()
+    task.spawn(function()
+        while getgenv().AternityConfig.AutoFarm do
+            pcall(function()
+                local character = LocalPlayer.Character
+                local root = character and character:FindFirstChild("HumanoidRootPart")
+                if not root then return end
+
+                local mainGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
+                local hasQuest = mainGui and mainGui:FindFirstChild("Quest") and mainGui.Quest.Visible
+                local currentTarget = GetMyTargetMob()
+
+                if not hasQuest then
+                    -- Перелет к квестовому персонажу
+                    local npc = FindValidTarget(currentTarget.QuestNPC)
+                    if npc then
+                        SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
+                        task.wait(0.4)
+                        fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
+                        task.wait(0.3)
+                    end
+                else
+                    -- Перелет в центр спота респавна мобов
+                    local farmPosition = currentTarget.Spot * CFrame.new(0, 7.5, 0)
+                    SecureTeleport(farmPosition)
+                    character.Humanoid.PlatformStand = true
+                    
+                    while getgenv().AternityConfig.AutoFarm and mainGui.Quest.Visible do
+                        local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
+                        local hasMobsOnSpot = false
+                        
+                        for _, obj in pairs(enemyFolder:GetChildren()) do
+                            if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
+                                hasMobsOnSpot = true
+                                obj.HumanoidRootPart.CanCollide = false
+                                
+                                -- Безопасный призрачный магнит скоростей (Bypass Force)
+                                obj.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+                                obj.HumanoidRootPart.CFrame = currentTarget.Spot
+                                
+                                -- Премиум-раздутие хитбокса (Метод Redz Hub)
+                                if obj.HumanoidRootPart:IsA("Part") or obj.HumanoidRootPart:IsA("MeshPart") then
+                                    obj.HumanoidRootPart.Size = Vector3.new(35, 35, 35)
+                                    obj.HumanoidRootPart.Transparency = 0.85
+                                end
+                                if obj:FindFirstChild("AttackParts") then obj.AttackParts:Destroy() end
+                            end
+                        end
+                        
+                        -- Возврат к квестовому боту при зачистке спота
+                        if not hasMobsOnSpot then
+                            local npc = FindValidTarget(currentTarget.QuestNPC)
+                            if npc then SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0)) end
+                            task.wait(1)
+                        end
+                        RunService.Heartbeat:Wait()
+                    end
+                end
+            end)
+            task.wait(0.3)
+        end
+        pcall(function() LocalPlayer.Character.Humanoid.PlatformStand = false end)
+    end)
+end
+
+-- 5. АВТОПРОКАЧКА СТАТИСТИКИ ПРИ ПОЛУЧЕНИИ УРОВНЕЙ
+task.spawn(function()
+    while task.wait(1) do
+        if getgenv().AternityConfig.AutoStats then
+            pcall(function()
+                local points = LocalPlayer.Data.Points.Value
+                if points > 0 then fireGameRemote("AddPoint", getgenv().AternityConfig.SelectedStat, points) end
+            end)
+        end
+    end
+end)
+
+-- 6. КЛИКЕР-СИМУЛЯЦИЯ (ДЛЯ АЛЬТЕРНАТИВНОГО УРОНА)
+task.spawn(function()
+    local vim = game:GetService("VirtualInputManager")
+    while task.wait(0.08) do
+        if getgenv().AternityConfig.AutoClick and (getgenv().AternityConfig.AutoFarm) then
+            pcall(function()
+                EquipWeapon()
+                vim:SendMouseButtonEvent(10, 10, 0, true, game, 1)
+                vim:SendMouseButtonEvent(10, 10, 0, false, game, 1)
+            end)
+        end
+    end
+end)
+
+-- 7. ДОПОЛНИТЕЛЬНЫЕ СКРИПТОВЫЕ ПОТОКИ (CHESTS & 3D ESP)
+function runChestAutomationLoop()
+    task.spawn(function()
+        while getgenv().AternityConfig.AutoChest do
+            pcall(function()
+                for _, obj in pairs(workspace:GetChildren()) do
+                    if string.find(obj.Name, "Chest") and obj:IsA("Part") then
+                        SecureTeleport(obj.CFrame)
+                        task.wait(0.4)
+                        break
+                    end
+                end
+            end)
+            task.wait(0.5)
+        end
+    end)
+end
+
+local espCache = {}
+task.spawn(function()
+    while true do
+        if getgenv().AternityConfig.VisualESP then
+            pcall(function()
+                for _, obj in pairs(workspace:GetChildren()) do
+                    if (string.find(obj.Name, "Chest") and obj:IsA("Part")) or (string.find(obj.Name:lower(), "fruit") and obj:IsA("Tool")) then
+                        if not espCache[obj] then
+                            local box = Instance.new("BoxHandleAdornment", obj)
+                            box.Size = obj:IsA("Part") and obj.Size or Vector3.new(4, 4, 4)
+                            box.AlwaysOnTop = true
+                            box.Color3 = obj:IsA("Part") and Color3.fromRGB(0, 255, 204) or Color3.fromRGB(255, 0, 150)
+                            box.Adornee = obj
+                            
+                            local billboard = Instance.new("BillboardGui", obj)
+                            billboard.Size = UDim2.new(0, 100, 0, 40)
+                            billboard.AlwaysOnTop = true
+                            billboard.StudsOffset = Vector3.new(0, 3, 0)
+                            
+                            local textLabel = Instance.new("TextLabel", billboard)
+                            textLabel.Size = UDim2.new(1, 0, 1, 0)
+                            textLabel.BackgroundTransparency = 1
+                            textLabel.TextColor3 = box.Color3
+                            textLabel.Font = Enum.Font.GothamBold
+                            textLabel.TextSize = 10
+                            textLabel.Text = obj.Name
+                            
+                            espCache[obj] = {b = box, g = billboard}
+                        end
+                    end
+                end
+            end)
+            task.wait(1)
+        else
+            for obj, inst in pairs(espCache) do
+                if inst.b then inst.b:Destroy() end
+                if inst.g then inst.g:Destroy() end
+            end
+            table.clear(espCache)
+            task.wait(0.5)
+        end
+    end
+end)
+
+print("[ATERNITY STEP 5] Все исполнительные движки Redz-уровня успешно развернуты.")
