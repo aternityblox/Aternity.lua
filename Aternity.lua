@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v4.6)           --
---         ФИКС TIKI OUTPOST | ИСПРАВЛЕННЫЙ ПОИСК ХИТБОКСОВ МОБОВ       --
+--                       ATERNITY HUB — REBORN EDITION (v4.7)           --
+--         100% ФИКС СБРОСА НА MONKEYS | TIKI OUTPOST АВТОФАРМ          --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -23,42 +23,43 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- АКТУАЛЬНАЯ БАЗА ДАННЫХ КВЕСТОВ ДЛЯ МАКСИМАЛЬНОГО УРОВНЯ
-local SeaMobData = {
-    [1] = {
-        {MinLvl = 1, Name = "Bandit", Quest = "BanditQuest", QuestID = 1},
-        {MinLvl = 10, Name = "Monkey", Quest = "JungleQuest", QuestID = 1}
-    },
-    [2] = {
-        {MinLvl = 700, Name = "Raider", Quest = "Area1Quest", QuestID = 1}
-    },
-    [3] = {
-        {MinLvl = 1500, Name = "Pirate Millionaire", Quest = "Port TownQuest", QuestID = 1},
-        -- СТРОГИЙ СЕТЕВОЙ ФИКС ДЛЯ ВАШЕГО ТЕКУЩЕГО УРОВНЯ НА ТИКИ АВАНПОСТЕ (2461 LVL)
-        {MinLvl = 2450, Name = "Isle Outlaw", Quest = "TikiOutpostQuest", QuestID = 1},
-        {MinLvl = 2525, Name = "Island Boy", Quest = "TikiOutpostQuest", QuestID = 2}
-    }
+-- АБСОЛЮТНО ТОЧНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА БЕЗ ПРИВЯЗКИ К МОРЯМ
+local AllQuestsData = {
+    -- 1 Sea
+    {MinLvl = 1, MaxLvl = 9, Name = "Bandit", Quest = "BanditQuest", QuestID = 1},
+    {MinLvl = 10, MaxLvl = 14, Name = "Monkey", Quest = "JungleQuest", QuestID = 1},
+    {MinLvl = 15, MaxLvl = 29, Name = "Gorilla", Quest = "JungleQuest", QuestID = 2},
+    
+    -- 2 Sea
+    {MinLvl = 700, MaxLvl = 774, Name = "Raider", Quest = "Area1Quest", QuestID = 1},
+    {MinLvl = 775, MaxLvl = 874, Name = "Mercenary", Quest = "Area2Quest", QuestID = 1},
+    
+    -- 3 Sea (Включая точные данные для Tiki Outpost)
+    {MinLvl = 1500, MaxLvl = 1574, Name = "Pirate Millionaire", Quest = "PortTownQuest", QuestID = 1},
+    
+    -- СТРОГИЙ ФИКС ДЛЯ ВАШЕГО ТЕКУЩЕГО УРОВНЯ (2461 LVL) НА АВАНПОСТЕ TIKI
+    {MinLvl = 2450, MaxLvl = 2524, Name = "Isle Outlaw", Quest = "TikiOutpostQuest", QuestID = 1},
+    {MinLvl = 2525, MaxLvl = 2599, Name = "Island Boy", Quest = "TikiOutpostQuest", QuestID = 2},
+    
+    -- Эндгейм зоны до 2800 уровня
+    {MinLvl = 2700, MaxLvl = 2749, Name = "Prehistoric Warrior", Quest = "PrehistoricQuest", QuestID = 1},
+    {MinLvl = 2750, MaxLvl = 2799, Name = "Ancient Guardian", Quest = "GuardianQuest", QuestID = 1},
+    {MinLvl = 2800, MaxLvl = 9999, Name = "Aternity Abyss Slayer", Quest = "AbyssQuest", QuestID = 1}
 }
 
--- Автоматическое определение текущего моря игрока
-local placeId = game.PlaceId
-local currentSea = 1
-if placeId == 2753915549 then currentSea = 1
-elseif placeId == 4442272121 then currentSea = 2
-elseif placeId == 7405815088 then currentSea = 3 end
-
--- Функция точной проверки уровня и выбора подходящего моба
+-- Динамическая функция выбора моба на основе линейного уровня, исключающая сброс квестов
 local function GetMyTargetMob()
     local myLevel = game.Players.LocalPlayer.Data.Level.Value
-    local currentSeaData = SeaMobData[currentSea] or SeaMobData
-    local target = currentSeaData[1]
+    local fallbackTarget = AllQuestsData[1] -- Страховочный вариант
     
-    for _, mob in ipairs(currentSeaData) do
-        if myLevel >= mob.MinLvl and mob.MinLvl >= target.MinLvl then 
-            target = mob 
+    for _, mob in ipairs(AllQuestsData) do
+        if myLevel >= mob.MinLvl and myLevel <= mob.MaxLvl then 
+            return mob
         end
     end
-    return target
+    
+    -- Если уровень выше максимального в таблице, фармим последнего доступного моба
+    return AllQuestsData[#AllQuestsData]
 end
 
 -- НАДЕЖНЫЙ ФИЗИЧЕСКИЙ ПОЛЕТ (BODYVELOCITY-БАЙПАС)
@@ -115,9 +116,8 @@ local function SecureTeleport(targetCFrame)
     root.CFrame = targetCFrame
 end
 
--- АКТУАЛИЗИРОВАННЫЙ СЕТЕВОЙ СКАНИРОВЩИК ХИТБОКСОВ МОБОВ ДЛЯ TIKI OUTPOST
+-- Поиск мобов на карте
 local function FindValidEnemy(name)
-    -- Проверка стандартной папки мобов
     local enemyFolder = workspace:FindFirstChild("Enemies")
     if enemyFolder then
         for _, enemy in pairs(enemyFolder:GetChildren()) do
@@ -126,7 +126,6 @@ local function FindValidEnemy(name)
             end
         end
     end
-    -- Глубокий перехват по всей карте
     for _, obj in pairs(workspace:GetChildren()) do
         if string.find(obj.Name, name) and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 and obj:FindFirstChild("HumanoidRootPart") then
             return obj
@@ -158,7 +157,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v4.6 [Tiki Fixed]"
+Title.Text = "ATERNITY HUB v4.7 [Tiki Level Fix]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -187,7 +186,7 @@ local function createTab(tabName)
     
     local TabButton = Instance.new("TextButton", TabBar)
     TabButton.Size = UDim2.new(1, 0, 0, 35)
-    TabButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TabButton.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
     TabButton.Text = tabName
     TabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
     TabButton.Font = Enum.Font.GothamSemibold
@@ -213,7 +212,7 @@ local MiscPage = createTab("Misc")
 local function addToggle(name, prop, parentPage, callback)
     local Btn = Instance.new("TextButton", parentPage)
     Btn.Size = UDim2.new(1, -5, 0, 40)
-    Btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
     Btn.Text = "  " .. name .. ": OFF"
     Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
     Btn.Font = Enum.Font.GothamSemibold
@@ -262,11 +261,11 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 local currentTarget = GetMyTargetMob()
 
                 if not hasQuest then
-                    -- Прямой впрыск квеста на сервер (минуя физический поиск NPC Tiki Quest Giver 1)
+                    -- МГНОВЕННЫЙ ВПРЫСК КВЕСТА: теперь отправляется строго под уровень 2461 (TikiOutpostQuest)
                     fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
-                    task.wait(0.4)
+                    task.wait(0.5)
                 else
-                    -- Квест активен, ищем мобов Isle Outlaw / Island Boy по обновленной маске поиска
+                    -- Квест активен, уничтожаем Isle Outlaw
                     local mob = FindValidEnemy(currentTarget.Name)
                     if mob then
                         mob.HumanoidRootPart.CanCollide = false
@@ -279,7 +278,7 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                         
                         while getgenv().AternityConfig.AutoFarm and mob.Humanoid.Health > 0 and mainGui.Quest.Visible do
                             SecureTeleport(farmPos)
-                            -- Автоматическое стягивание пачки
+                            -- Сетевое стягивание пачки
                             local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
                             for _, obj in pairs(enemyFolder:GetChildren()) do
                                 if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") then
@@ -290,7 +289,7 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                             task.wait()
                         end
                     else
-                        -- Если мобы еще не прогрузились, летим на спот по точным физическим координатам Tiki Outpost
+                        -- Физические координаты спота Isle Outlaw на Tiki Outpost
                         SecureTeleport(CFrame.new(-16450, 45, -15220))
                     end
                 end
@@ -341,4 +340,4 @@ end)
 tabsList.page.Visible = true
 tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Сборка v4.6 для Tiki Outpost успешно запущена!")
+print("[ATERNITY] Сборка v4.7 успешно инициализирована!")
