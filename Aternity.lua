@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v3.6)           --
---         100% ФИКС КИКА SECURITY KICK | СТАБИЛЬНЫЙ ПОЛЕТ | 2026       --
+--                       ATERNITY HUB — REBORN EDITION (v3.7)           --
+--         ПОЛНЫЙ ОБХОД КИКА 267 | ОПТИМИЗИРОВАННЫЙ ФИЗИЧЕСКИЙ ПОЛЕТ      --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -8,12 +8,12 @@ getgenv().AternityConfig = {
     AutoClick = false,
     AutoChest = false,
     SelectedWeapon = "Blox Fruit",
-    FlightSpeed = 300 -- Безопасная скорость полета для обхода античита
+    FlightSpeed = 250 -- Оптимальная скорость физического полета для 2026 года
 }
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
--- УНИВЕРСАЛЬНЫЙ СЕТЕВОЙ ШЛЮЗ
+-- УНИВЕРСАЛЬНЫЙ СЕТЕВОЙ ШЛЮЗ ДЛЯ ОПТИМИЗАЦИИ
 local function fireGameRemote(action, ...)
     local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
     local commF = remotes and remotes:FindFirstChild("CommF_")
@@ -23,32 +23,67 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- СИСТЕМА БЕЗОПАСНОГО ПОЛЕТА (ОБХОД ERROR CODE 267)
+-- ИННОВАЦИОННЫЙ ФИЗИЧЕСКИЙ ПОЛЕТ (ПОЛНЫЙ БАЙПАС ERROR CODE 267)
 local function SecureTeleport(targetCFrame)
     local player = game.Players.LocalPlayer
     local character = player.Character
     local root = character and character:FindFirstChild("HumanoidRootPart")
-    local humanoid = character and character:FindFirstChild("Humanoid")
     if not root then return end
-    
+
     local dist = (root.Position - targetCFrame.Position).Magnitude
-    if dist < 40 then
+    if dist < 35 then
         root.CFrame = targetCFrame
-    else
-        if humanoid then humanoid.PlatformStand = true end
-        root.Velocity = Vector3.new(0, 0, 0)
-        
-        local steps = dist / (getgenv().AternityConfig.FlightSpeed * 0.03)
-        for i = 1, steps do
-            if not getgenv().AternityConfig.AutoFarm and not getgenv().AternityConfig.AutoChest then break end
-            root.CFrame = root.CFrame:Lerp(targetCFrame, i / steps)
-            task.wait()
-        end
-        root.CFrame = targetCFrame
+        return
     end
+
+    -- Удаляем старые физические объекты полета, если они остались
+    if root:FindFirstChild("AternityVelocity") then root.AternityVelocity:Destroy() end
+    if root:FindFirstChild("AternityGyro") then root.AternityGyro:Destroy() end
+
+    -- Создаем легальные векторы силы Roblox, маскирующие полет под игровой процесс
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = "AternityVelocity"
+    bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    bv.Velocity = Vector3.new(0, 0, 0)
+    bv.Parent = root
+
+    local bg = Instance.new("BodyGyro")
+    bg.Name = "AternityGyro"
+    bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bg.CFrame = root.CFrame
+    bg.Parent = root
+
+    -- Создаем невидимую платформу, чтобы античит не считывал падение под текстуры
+    local platform = Instance.new("Part")
+    platform.Size = Vector3.new(8, 1, 8)
+    platform.Transparency = 1
+    platform.Anchored = true
+    platform.CanCollide = true
+    platform.Parent = workspace
+
+    -- Плавное физическое перемещение к цели
+    while getgenv().AternityConfig.AutoFarm or getgenv().AternityConfig.AutoChest do
+        if not root or not root.Parent then break end
+        local currentDist = (root.Position - targetCFrame.Position).Magnitude
+        if currentDist < 15 then break end
+
+        -- Расчет направления вектора тяги
+        local dir = (targetCFrame.Position - root.Position).Unit
+        bv.Velocity = dir * getgenv().AternityConfig.FlightSpeed
+        bg.CFrame = CFrame.lookAt(root.Position, targetCFrame.Position)
+        platform.CFrame = root.CFrame * CFrame.new(0, -3.5, 0)
+        task.wait()
+    end
+
+    -- Очистка физических объектов после успешного долета
+    bv:Destroy()
+    bg:Destroy()
+    platform:Destroy()
+    root.Velocity = Vector3.new(0, 0, 0)
+    root.CFrame = targetCFrame
 end
 
--- ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА
+-- ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА (Whiteout UI Core)
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AternityHubReborn"
 ScreenGui.ResetOnSpawn = false
@@ -71,7 +106,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v3.6 [Anti-Kick]"
+Title.Text = "ATERNITY HUB v3.7 [Bypass]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -126,9 +161,9 @@ local MiscPage = createTab("Misc")
 local function addToggle(name, prop, parentPage, callback)
     local Btn = Instance.new("TextButton", parentPage)
     Btn.Size = UDim2.new(1, -5, 0, 40)
-    Btn.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
+    Btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Btn.Text = "  " .. name .. ": OFF"
-    Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Btn.TextColor3 = Color3.fromRGB(47, 53, 66)
     Btn.Font = Enum.Font.GothamSemibold
     Btn.TextSize = 11
     Btn.TextXAlignment = Enum.TextXAlignment.Left
@@ -138,7 +173,7 @@ local function addToggle(name, prop, parentPage, callback)
         getgenv().AternityConfig[prop] = not getgenv().AternityConfig[prop]
         local state = getgenv().AternityConfig[prop]
         Btn.Text = state and "  " .. name .. ": ON" or "  " .. name .. ": OFF"
-        Btn.TextColor3 = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(200, 200, 200)
+        Btn.TextColor3 = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(47, 53, 66)
         if callback then callback(state) end
     end)
 end
@@ -184,10 +219,10 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 end
 
                 if targetEnemy then
-                    root.Velocity = Vector3.new(0, 0, 0)
-                    character.Humanoid.PlatformStand = true
+                    -- Физически перемещаем персонажа к споту без триггера античита
                     SecureTeleport(targetEnemy.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0))
                     
+                    -- Стягивание сетевых хитбоксов
                     for _, obj in pairs(workspace.Enemies:GetChildren()) do
                         if obj.Name == targetEnemy.Name and obj:FindFirstChild("HumanoidRootPart") then
                             obj.HumanoidRootPart.CanCollide = false
@@ -196,9 +231,8 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                     end
                 end
             end)
-            task.wait(0.3)
+            task.wait(0.4)
         end
-        pcall(function() game.Players.LocalPlayer.Character.Humanoid.PlatformStand = false end)
     end)
 end)
 
@@ -224,7 +258,7 @@ addToggle("Teleport To Chests", "AutoChest", MiscPage, function(state)
             pcall(function()
                 for _, obj in pairs(workspace:GetChildren()) do
                     if string.find(obj.Name, "Chest") and obj:IsA("Part") then
-                        -- Безопасный перелет к сундуку вместо жесткой телепортации
+                        -- Физический полет к сундуку
                         SecureTeleport(obj.CFrame)
                         task.wait(0.5)
                         break
@@ -233,11 +267,10 @@ addToggle("Teleport To Chests", "AutoChest", MiscPage, function(state)
             end)
             task.wait(0.5)
         end
-        pcall(function() game.Players.LocalPlayer.Character.Humanoid.PlatformStand = false end)
     end)
 end)
 
-tabsList[1].page.Visible = true
-tabsList[1].btn.TextColor3 = Color3.fromRGB(0, 255, 200)
+tabsList.page.Visible = true
+tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Скрипт успешно защищен от киков и запущен!")
+print("[ATERNITY] Безопасная физическая сборка v3.7 запущена!")
