@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v3.8)           --
---         100% ФИКС ЛЕВЕЛИНГА | АВТОКВЕСТ | ЗАЩИТА В ВОЗДУХЕ           --
+--                       ATERNITY HUB — REBORN EDITION (v3.9)           --
+--         ФИКС БАЗЫ ДАННЫХ КВЕСТОВ 2800 LVL | АВТОФАРМ ПО УРОВНЮ        --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -23,17 +23,22 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- АКТУАЛЬНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА НА 20 ИЮНЯ 2026 ГОДА
+-- АКТУАЛИЗИРОВАННАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА ПОД МАКСИМАЛЬНЫЙ УРОВЕНЬ 2800
 local SeaMobData = {
     [1] = {
         {MinLvl = 1, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1},
-        {MinLvl = 10, Name = "Monkey", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 1}
+        {MinLvl = 10, Name = "Monkey", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 1},
+        {MinLvl = 15, Name = "Gorilla", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 2},
+        {MinLvl = 30, Name = "Pirate", QuestNPC = "Pirate Adventurer", Quest = "PirateIslandQuest", QuestID = 1}
     },
     [2] = {
-        {MinLvl = 700, Name = "Raider", QuestNPC = "Quest Giver", Quest = "Area1Quest", QuestID = 1}
+        {MinLvl = 700, Name = "Raider", QuestNPC = "Quest Giver", Quest = "Area1Quest", QuestID = 1},
+        {MinLvl = 775, Name = "Mercenary", QuestNPC = "Quest Giver", Quest = "Area2Quest", QuestID = 1},
+        {MinLvl = 875, Name = "Swan Pirate", QuestNPC = "Quest Giver", Quest = "Area2Quest", QuestID = 2}
     },
     [3] = {
         {MinLvl = 1500, Name = "Pirate Millionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 1},
+        {MinLvl = 1575, Name = "Pistol Billionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 2},
         {MinLvl = 2700, Name = "Prehistoric Warrior", QuestNPC = "Ancient Quest Giver", Quest = "PrehistoricQuest", QuestID = 1},
         {MinLvl = 2750, Name = "Ancient Guardian", QuestNPC = "Ancient Quest Giver", Quest = "GuardianQuest", QuestID = 1},
         {MinLvl = 2800, Name = "Aternity Abyss Slayer", QuestNPC = "Abyss Quest Giver", Quest = "AbyssQuest", QuestID = 1}
@@ -47,11 +52,12 @@ if placeId == 2753915549 then currentSea = 1
 elseif placeId == 4442272121 then currentSea = 2
 elseif placeId == 7405815088 then currentSea = 3 end
 
--- Функция умного подбора моба под уровень игрока
+-- Функция точной проверки уровня и выбора подходящего моба
 local function GetMyTargetMob()
     local myLevel = game.Players.LocalPlayer.Data.Level.Value
     local currentSeaData = SeaMobData[currentSea] or SeaMobData[1]
     local target = currentSeaData[1]
+    
     for _, mob in ipairs(currentSeaData) do
         if myLevel >= mob.MinLvl and mob.MinLvl >= target.MinLvl then 
             target = mob 
@@ -60,7 +66,7 @@ local function GetMyTargetMob()
     return target
 end
 
--- ФИЗИЧЕСКИЙ ПОЛЕТ (ОБХОД КИКА СЕРВЕРА)
+-- ФИЗИЧЕСКИЙ ПОЛЕТ (БАЙПАС СЕТЕВОЙ ЗАЩИТЫ)
 local function SecureTeleport(targetCFrame)
     local player = game.Players.LocalPlayer
     local character = player.Character
@@ -114,7 +120,6 @@ local function SecureTeleport(targetCFrame)
     root.CFrame = targetCFrame
 end
 
--- Функция поиска NPC или Мобов
 local function FindValidTarget(name)
     for _, folder in pairs({workspace, workspace:FindFirstChild("Enemies"), workspace:FindFirstChild("NPCs")}) do
         if folder then
@@ -128,7 +133,7 @@ local function FindValidTarget(name)
     return nil
 end
 
--- ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА
+-- ИНИЦИАЛИЗАЦИЯ UI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AternityHubReborn"
 ScreenGui.ResetOnSpawn = false
@@ -151,7 +156,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v3.8 [Quest Fix]"
+Title.Text = "ATERNITY HUB v3.9 [Lvl 2800 Fix]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -206,9 +211,9 @@ local MiscPage = createTab("Misc")
 local function addToggle(name, prop, parentPage, callback)
     local Btn = Instance.new("TextButton", parentPage)
     Btn.Size = UDim2.new(1, -5, 0, 40)
-    Btn.BackgroundColor3 = Color3.fromRGB(25, 30, 45)
+    Btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Btn.Text = "  " .. name .. ": OFF"
-    Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Btn.TextColor3 = Color3.fromRGB(47, 53, 66)
     Btn.Font = Enum.Font.GothamSemibold
     Btn.TextSize = 11
     Btn.TextXAlignment = Enum.TextXAlignment.Left
@@ -218,7 +223,7 @@ local function addToggle(name, prop, parentPage, callback)
         getgenv().AternityConfig[prop] = not getgenv().AternityConfig[prop]
         local state = getgenv().AternityConfig[prop]
         Btn.Text = state and "  " .. name .. ": ON" or "  " .. name .. ": OFF"
-        Btn.TextColor3 = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(200, 200, 200)
+        Btn.TextColor3 = state and Color3.fromRGB(0, 255, 200) or Color3.fromRGB(47, 53, 66)
         if callback then callback(state) end
     end)
 end
@@ -240,7 +245,7 @@ local function EquipWeapon()
     end)
 end
 
--- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ УМНОГО АВТОФАРМА (С КВЕСТАМИ И ОБХОДОМ УРОНА)
+-- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ УМНОГО АВТОФАРМА
 addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
     task.spawn(function()
         while getgenv().AternityConfig.AutoFarm do
@@ -255,7 +260,7 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 local currentTarget = GetMyTargetMob()
 
                 if not hasQuest then
-                    -- 1. Если квеста нет, летим к NPC своего уровня
+                    -- Летим строго к NPC своего уровня
                     local npc = FindValidTarget(currentTarget.QuestNPC)
                     if npc and npc:FindFirstChild("HumanoidRootPart") then
                         SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
@@ -263,7 +268,7 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                         fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
                     end
                 else
-                    -- 2. Если квест взят, летим убивать мобов строго своего уровня
+                    -- Летим строго к мобам своего уровня
                     local mob = FindValidTarget(currentTarget.Name)
                     if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
                         mob.HumanoidRootPart.CanCollide = false
@@ -271,13 +276,11 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                             mob.AttackParts:Destroy() 
                         end
                         
-                        -- Удержание игрока на высоте 8.5 блоков над мобом (Полная защита от входящего урона)
                         character.Humanoid.PlatformStand = true
                         local farmPos = mob.HumanoidRootPart.CFrame * CFrame.new(0, 8.5, 0)
                         
                         while getgenv().AternityConfig.AutoFarm and mob.Humanoid.Health > 0 and mainGui.Quest.Visible do
                             SecureTeleport(farmPos)
-                            -- Сетевое стягивание остальных мобов под вас
                             for _, obj in pairs(workspace.Enemies:GetChildren()) do
                                 if obj.Name == currentTarget.Name and obj:FindFirstChild("HumanoidRootPart") then
                                     obj.HumanoidRootPart.CanCollide = false
@@ -287,7 +290,6 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                             task.wait()
                         end
                     else
-                        -- Если мобов на споте временно нет, летим на безопасную высоту точки спавна караулить их
                         local spawners = workspace:FindFirstChild("EnemySpawns") or workspace:FindFirstChild("Spawners")
                         if spawners and spawners:FindFirstChild(currentTarget.Name) then
                             SecureTeleport(spawners[currentTarget.Name].CFrame * CFrame.new(0, 15, 0))
@@ -338,7 +340,7 @@ addToggle("Teleport To Chests", "AutoChest", MiscPage, function(state)
     end)
 end)
 
-tabsList[1].page.Visible = true
-tabsList[1].btn.TextColor3 = Color3.fromRGB(0, 255, 200)
+tabsList.page.Visible = true
+tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Сборка v3.8 со встроенным автоквестом успешно запущена!")
+print("[ATERNITY] Сборка v3.9 со встроенным автоквестом успешно запущена!")
