@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v5.6)           --
---         100% ФИКС СТЯГИВАНИЯ МОБОВ | НЕПРЕРЫВНАЯ СИЛОВАЯ ФИКСАЦИЯ     --
+--                       ATERNITY HUB — REBORN EDITION (v6.0)           --
+--         ФИЗИЧЕСКИЙ ГРАВИТАЦИОННЫЙ МАГНИТ | 100% ФИКС TIKI OUTPOST    --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -23,14 +23,14 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- ЛИНЕЙНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА
+-- ЛИНЕЙНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА ПОД ПАТЧ 2800 УРОВНЯ
 local AllQuestsData = {
     {MinLvl = 1, MaxLvl = 9, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1},
     {MinLvl = 10, MaxLvl = 14, Name = "Monkey", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 1},
     {MinLvl = 700, MaxLvl = 774, Name = "Raider", QuestNPC = "Quest Giver", Quest = "Area1Quest", QuestID = 1},
     {MinLvl = 1500, MaxLvl = 1574, Name = "Pirate Millionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 1},
     
-    -- ДИАПАЗОН ДЛЯ TIKI OUTPOST (ВАШ УРОВЕНЬ 2461)
+    -- ИДЕАЛЬНЫЙ ДИАПАЗОН ДЛЯ TIKI OUTPOST (ВАШ УРОВЕНЬ 2461)
     {MinLvl = 2450, MaxLvl = 2524, Name = "Isle Outlaw", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 1},
     {MinLvl = 2525, MaxLvl = 2599, Name = "Island Boy", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 2},
     
@@ -96,7 +96,7 @@ local function SecureTeleport(targetCFrame)
         bv.Velocity = dir * getgenv().AternityConfig.FlightSpeed
         bg.CFrame = CFrame.lookAt(root.Position, flatTarget)
         platform.CFrame = root.CFrame * CFrame.new(0, -3.5, 0)
-        task.wait()
+        game:GetService("RunService").Heartbeat:Wait()
     end
 
     bv:Destroy()
@@ -146,7 +146,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v5.6 [Force Magnet]"
+Title.Text = "ATERNITY HUB v6.0 [Force Gravity]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -235,7 +235,7 @@ local function EquipWeapon()
     end)
 end
 
--- НЕПРЕРЫВНЫЙ ВЫСОКОЧАСТОТНЫЙ МАГНИТНЫЙ ЦИКЛ ФАРМА
+-- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ СУПЕР-СТАБИЛЬНОГО АВТОФАРМА
 addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
     task.spawn(function()
         while getgenv().AternityConfig.AutoFarm do
@@ -253,7 +253,7 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                     local npc = FindValidTarget(currentTarget.QuestNPC)
                     if npc then
                         SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
-                        task.wait(0.3)
+                        task.wait(0.4)
                         fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
                         task.wait(0.3)
                     end
@@ -268,18 +268,18 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                         character.Humanoid.PlatformStand = true
                         local farmPos = mob.HumanoidRootPart.CFrame * CFrame.new(0, 8.5, 0)
                         
-                        -- ЖЕСТКАЯ СИЛОВАЯ СЦЕПКА ПАКЕТОВ (МОБЫ НЕ СМОГУТ УЛЕТЕТЬ)
+                        -- ИННОВАЦИОННЫЙ ГРАВИТАЦИОННЫЙ МАГНИТ (БЕЗ РАССИНХРОНИЗАЦИИ СЕРВЕРА)
                         while getgenv().AternityConfig.AutoFarm and mob.Humanoid.Health > 0 and mainGui.Quest.Visible do
                             SecureTeleport(farmPos)
                             local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
                             for _, obj in pairs(enemyFolder:GetChildren()) do
                                 if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
                                     obj.HumanoidRootPart.CanCollide = false
-                                    obj.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
-                                    obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame
+                                    -- Вместо перезаписи CFrame прикладываем постоянную физическую силу притяжения к базовому мобу
+                                    obj.HumanoidRootPart.Velocity = (mob.HumanoidRootPart.Position - obj.HumanoidRootPart.Position) * 18
                                 end
                             end
-                            game:GetService("RunService").Heartbeat:Wait() -- Моментальное стягивание каждый кадр физики движка
+                            game:GetService("RunService").Heartbeat:Wait()
                         end
                     else
                         SecureTeleport(CFrame.new(-16450, 45, -15220))
@@ -332,4 +332,4 @@ end)
 tabsList.page.Visible = true
 tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Сборка v5.6 успешно инициализирована!")
+print("[ATERNITY] Сборка v6.0 Force Gravity успешно запущена!")
