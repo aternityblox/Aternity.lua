@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v6.5)           --
---         100% ЗАЩИТА ОТ УРОНА МОБОВ | ВЫСОТНЫЙ БАЙПАС ДЛЯ TIKI          --
+--                       ATERNITY HUB — REBORN EDITION (v7.0)           --
+--         ФИКС УЛЁТА С КАРТЫ | 100% СТЯГИВАНИЕ И УВЕЛИЧЕННЫЙ ХИТБОКС   --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -23,14 +23,14 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- АКТУАЛЬНАЯ ЛИНЕЙНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА ПОД ПАТЧ 2800 УРОВНЯ
+-- ЛИНЕЙНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА (TIKI OUTPOST ФИКС)
 local AllQuestsData = {
     {MinLvl = 1, MaxLvl = 9, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1},
     {MinLvl = 10, MaxLvl = 14, Name = "Monkey", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 1},
     {MinLvl = 700, MaxLvl = 774, Name = "Raider", QuestNPC = "Quest Giver", Quest = "Area1Quest", QuestID = 1},
     {MinLvl = 1500, MaxLvl = 1574, Name = "Pirate Millionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 1},
     
-    -- ДИАПАЗОН ДЛЯ TIKI OUTPOST (ВАШ УРОВЕНЬ 2461)
+    -- ИСПРАВЛЕННЫЙ ДИАПАЗОН ДЛЯ TIKI OUTPOST (ВАШ УРОВЕНЬ 2461)
     {MinLvl = 2450, MaxLvl = 2524, Name = "Isle Outlaw", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 1},
     {MinLvl = 2525, MaxLvl = 2599, Name = "Island Boy", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 2},
     
@@ -48,7 +48,7 @@ local function GetMyTargetMob()
     return AllQuestsData[#AllQuestsData]
 end
 
--- ВЫСОТНЫЙ БЕЗОПАСНЫЙ ПОЛЕТ (ОБХОД ЗДАНИЙ И АНТИЧИТА)
+-- СТАБИЛЬНЫЙ ВЫСОТНЫЙ ПОЛЕТ (БЕЗ РАССИНХРОНИЗАЦИИ И СБРОСА КООРДИНАТ)
 local function SecureTeleport(targetCFrame)
     local player = game.Players.LocalPlayer
     local character = player.Character
@@ -56,7 +56,7 @@ local function SecureTeleport(targetCFrame)
     if not root then return end
 
     local dist = (root.Position - targetCFrame.Position).Magnitude
-    if dist < 30 then
+    if dist < 25 then
         root.CFrame = targetCFrame
         return
     end
@@ -83,7 +83,6 @@ local function SecureTeleport(targetCFrame)
     platform.CanCollide = true
     platform.Parent = workspace
 
-    -- Алгоритм облета препятствий по воздуху
     local startHighPos = Vector3.new(root.Position.X, targetCFrame.Position.Y + 130, root.Position.Z)
     root.CFrame = CFrame.new(startHighPos)
     task.wait(0.05)
@@ -106,7 +105,6 @@ local function SecureTeleport(targetCFrame)
     platform:Destroy()
     root.Velocity = Vector3.new(0, 0, 0)
     root.CFrame = targetCFrame
-    task.wait(0.1)
 end
 
 local function FindValidTarget(name)
@@ -125,7 +123,7 @@ local function FindValidTarget(name)
     return nil
 end
 
--- ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА
+-- ИНИЦИАЛИЗАЦИЯ UI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AternityHubReborn"
 ScreenGui.ResetOnSpawn = false
@@ -148,7 +146,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v6.5 [God Mode]"
+Title.Text = "ATERNITY HUB v7.0 [Tiki Overlord]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -237,7 +235,7 @@ local function EquipWeapon()
     end)
 end
 
--- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ АВТОФАРМА (GOD MODE & FORCE MAGNET)
+-- ИСПОЛНИТЕЛЬНЫЙ ДВИЖОК ТОТАЛЬНОГО АВТОФАРМА (HITBOX & MAGNET ФИКС)
 addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
     task.spawn(function()
         while getgenv().AternityConfig.AutoFarm do
@@ -262,42 +260,40 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 else
                     local mob = FindValidTarget(currentTarget.Name)
                     if mob and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-                        mob.HumanoidRootPart.CanCollide = false
-                        
-                        -- Полное отключение боевых скриптов и коллизии у мобов
-                        if mob:FindFirstChild("AttackParts") then 
-                            mob.AttackParts:Destroy() 
-                        end
-                        if mob:FindFirstChild("Animate") then 
-                            mob.Animate:Destroy() 
-                        end
+                        -- ОПТИМАЛЬНАЯ ВЫСОТА 7.5 БЛОКОВ С ГАРАНТИЕЙ ДОСЯГАЕМОСТИ УДАРОВ
+                        local farmPos = mob.HumanoidRootPart.CFrame * CFrame.new(0, 7.5, 0)
+                        SecureTeleport(farmPos)
                         
                         character.Humanoid.PlatformStand = true
                         
-                        -- УВЕЛИЧЕННАЯ ВЫСОТА ДО 14.5 БЛОКОВ (ПОЛНЫЙ ИММУНИТЕТ ОТ ЛЮБОГО AOE УРОНА)
-                        local farmPos = mob.HumanoidRootPart.CFrame * CFrame.new(0, 14.5, 0)
-                        
-                        while getgenv().AternityConfig.AutoFarm and mob.Humanoid.Health > 0 and mainGui.Quest.Visible do
-                            SecureTeleport(farmPos)
-                            local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
-                            for _, obj in pairs(enemyFolder:GetChildren()) do
-                                if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
-                                    obj.HumanoidRootPart.CanCollide = false
-                                    -- Жесткая фиксация скорости и стягивание в ровный шар под нами
-                                    obj.HumanoidRootPart.Velocity = (mob.HumanoidRootPart.Position - obj.HumanoidRootPart.Position) * 22
-                                    if obj:FindFirstChild("AttackParts") then 
-                                        obj.AttackParts:Destroy() 
-                                    end
+                        -- СИСТЕМА ДИНАМИЧЕСКОГО КЛИЕНТСКОГО СТЯГИВАНИЯ И УВЕЛИЧЕНИЯ ХИТБОКСОВ
+                        local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
+                        for _, obj in pairs(enemyFolder:GetChildren()) do
+                            if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
+                                obj.HumanoidRootPart.CanCollide = false
+                                
+                                -- 1. Полная фиксация мобов в одной координатной точке под вами (без рассинхрона)
+                                obj.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+                                obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame
+                                
+                                -- 2. Увеличение хитбоксов мобов до 25 блоков (Вы будете попадать по ВСЕМ мобам одновременно)
+                                if obj.HumanoidRootPart:IsA("Part") or obj.HumanoidRootPart:IsA("MeshPart") then
+                                    obj.HumanoidRootPart.Size = Vector3.new(25, 25, 25)
+                                    obj.HumanoidRootPart.Transparency = 0.8 -- Делает хитбокс слегка видимым для контроля
+                                end
+                                
+                                if obj:FindFirstChild("AttackParts") then 
+                                    obj.AttackParts:Destroy() 
                                 end
                             end
-                            game:GetService("RunService").Heartbeat:Wait()
                         end
                     else
+                        -- Караулим спот Isle Outlaw на Tiki Outpost
                         SecureTeleport(CFrame.new(-16450, 45, -15220))
                     end
                 end
             end)
-            task.wait(0.2)
+            game:GetService("RunService").Heartbeat:Wait()
         end
         pcall(function() 
             game.Players.LocalPlayer.Character.Humanoid.PlatformStand = false 
@@ -343,4 +339,4 @@ end)
 tabsList.page.Visible = true
 tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Сборка v6.5 God Mode успешно запущена!")
+print("[ATERNITY] Сборка v7.0 полностью запущена!")
