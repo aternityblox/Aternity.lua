@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v5.0)           --
---         ФИКС ПРЕПЯТСТВИЙ И СТЯГИВАНИЯ МОБОВ | СТАБИЛЬНЫЙ ФАРМ        --
+--                       ATERNITY HUB — REBORN EDITION (v5.5)           --
+--         ПОЛНЫЙ ФИКС ЛАГОВ ПОЛЕТА | СТАБИЛЬНЫЙ МАГНИТ И АВТОКВЕСТ     --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -13,7 +13,7 @@ getgenv().AternityConfig = {
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
--- УНИВЕРСАЛЬНЫЙ СЕТЕВОЙ ШЛЮЗ ДЛЯ КВЕСТОВ И СТАТОВ
+-- УНИВЕРСАЛЬНЫЙ СЕТЕВОЙ ШЛЮЗ
 local function fireGameRemote(action, ...)
     local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
     local commF = remotes and remotes:FindFirstChild("CommF_")
@@ -23,21 +23,20 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- БАЗА ДАННЫХ ЛЕВЕЛИНГА
+-- ЛИНЕЙНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА БЕЗ СБРОСОВ
 local AllQuestsData = {
     {MinLvl = 1, MaxLvl = 9, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1},
     {MinLvl = 10, MaxLvl = 14, Name = "Monkey", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 1},
     {MinLvl = 700, MaxLvl = 774, Name = "Raider", QuestNPC = "Quest Giver", Quest = "Area1Quest", QuestID = 1},
     {MinLvl = 1500, MaxLvl = 1574, Name = "Pirate Millionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 1},
     
-    -- ТОЧНЫЙ ФИКС ДЛЯ ВАШЕГО УРОВНЯ (2461 LVL) НА АВАНПОСТЕ TIKI
+    -- ИСПРАВЛЕННЫЙ ДИАПАЗОН ДЛЯ TIKI OUTPOST (УРОВЕНЬ 2461)
     {MinLvl = 2450, MaxLvl = 2524, Name = "Isle Outlaw", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 1},
     {MinLvl = 2525, MaxLvl = 2599, Name = "Island Boy", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 2},
     
     {MinLvl = 2800, MaxLvl = 9999, Name = "Aternity Abyss Slayer", QuestNPC = "Abyss Quest Giver", Quest = "AbyssQuest", QuestID = 1}
 }
 
--- Динамический подбор моба по уровню
 local function GetMyTargetMob()
     local myLevel = game.Players.LocalPlayer.Data.Level.Value
     for _, mob in ipairs(AllQuestsData) do
@@ -48,7 +47,7 @@ local function GetMyTargetMob()
     return AllQuestsData[#AllQuestsData]
 end
 
--- ВЫСОТНЫЙ БЕЗОПАСНЫЙ ПОЛЕТ (ОБХОД СТЕН И КИКА 267)
+-- ОПТИМИЗИРОВАННЫЙ ВЫСОТНЫЙ ПОЛЕТ (БЕЗ ФРИЗОВ И ПЕРЕПРОПИСИ ТЕКУЩИХ ВЕКТОРОВ)
 local function SecureTeleport(targetCFrame)
     local player = game.Players.LocalPlayer
     local character = player.Character
@@ -56,11 +55,12 @@ local function SecureTeleport(targetCFrame)
     if not root then return end
 
     local dist = (root.Position - targetCFrame.Position).Magnitude
-    if dist < 35 then
+    if dist < 30 then
         root.CFrame = targetCFrame
         return
     end
 
+    -- Очистка старых векторов перед полетом
     if root:FindFirstChild("AternityVelocity") then root.AternityVelocity:Destroy() end
     if root:FindFirstChild("AternityGyro") then root.AternityGyro:Destroy() end
 
@@ -83,16 +83,17 @@ local function SecureTeleport(targetCFrame)
     platform.CanCollide = true
     platform.Parent = workspace
 
-    -- Алгоритм обхода препятствий: взлетаем выше зданий перед горизонтальным полетом
-    local highPos = Vector3.new(root.Position.X, targetCFrame.Position.Y + 120, root.Position.Z)
-    root.CFrame = CFrame.new(highPos)
+    -- Подъем выше любых препятствий Аванпоста Тики
+    local startHighPos = Vector3.new(root.Position.X, targetCFrame.Position.Y + 130, root.Position.Z)
+    root.CFrame = CFrame.new(startHighPos)
+    task.wait(0.05)
 
+    -- Изолированный цикл плавного горизонтального полета
     while getgenv().AternityConfig.AutoFarm or getgenv().AternityConfig.AutoChest do
-        if not root or not root.Parent then break end
         local flatTarget = Vector3.new(targetCFrame.Position.X, root.Position.Y, targetCFrame.Position.Z)
         local currentDist = (root.Position - flatTarget).Magnitude
         
-        if currentDist < 15 then break end
+        if currentDist < 12 then break end
 
         local dir = (flatTarget - root.Position).Unit
         bv.Velocity = dir * getgenv().AternityConfig.FlightSpeed
@@ -106,12 +107,13 @@ local function SecureTeleport(targetCFrame)
     platform:Destroy()
     root.Velocity = Vector3.new(0, 0, 0)
     root.CFrame = targetCFrame
+    task.wait(0.1)
 end
 
--- Надежный поиск целей на карте
+-- Безопасный глобальный поиск по структурам папок игры
 local function FindValidTarget(name)
-    local locations = {workspace, workspace:FindFirstChild("NPCs"), workspace:FindFirstChild("Enemies")}
-    for _, folder in pairs(locations) do
+    local folders = {workspace, workspace:FindFirstChild("NPCs"), workspace:FindFirstChild("Enemies")}
+    for _, folder in pairs(folders) do
         if folder then
             local found = folder:FindFirstChild(name)
             if found and found:FindFirstChild("HumanoidRootPart") then return found end
@@ -125,7 +127,7 @@ local function FindValidTarget(name)
     return nil
 end
 
--- ИНИЦИАЛИЗАЦИЯ UI
+-- ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AternityHubReborn"
 ScreenGui.ResetOnSpawn = false
@@ -148,7 +150,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v5.0 [Perfect Farm]"
+Title.Text = "ATERNITY HUB v5.5 [Ultimate]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -237,7 +239,7 @@ local function EquipWeapon()
     end)
 end
 
--- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ БЕЗУПРЕЧНОГО АВТОФАРМА
+-- ОТЛАЖЕННЫЙ ИГРОВОЙ ЦИКЛ АВТОФАРМА И СТЯГИВАНИЯ БЕЗ ЛАГОВ
 addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
     task.spawn(function()
         while getgenv().AternityConfig.AutoFarm do
@@ -252,18 +254,18 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 local currentTarget = GetMyTargetMob()
 
                 if not hasQuest then
-                    -- 1. Подлетаем сверху к Tiki Quest Giver 1
+                    -- 1. Физический подлет напрямую к Tiki Quest Giver 1
                     local npc = FindValidTarget(currentTarget.QuestNPC)
                     if npc then
                         SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
-                        task.wait(0.5)
+                        task.wait(0.3)
                         fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
-                        task.wait(0.5)
+                        task.wait(0.3)
                     end
                 else
-                    -- 2. КВЕСТ УСПЕШНО ВЗЯТ. Включаем магнитную чистку локации
+                    -- 2. КВЕСТ АКТИВЕН. Начинаем фарм мобов строго по хитбоксам
                     local mob = FindValidTarget(currentTarget.Name)
-                    if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
+                    if mob and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
                         mob.HumanoidRootPart.CanCollide = false
                         if mob:FindFirstChild("AttackParts") then 
                             mob.AttackParts:Destroy() 
@@ -274,19 +276,19 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                         
                         while getgenv().AternityConfig.AutoFarm and mob.Humanoid.Health > 0 and mainGui.Quest.Visible do
                             SecureTeleport(farmPos)
-                            -- ИСПРАВЛЕННЫЙ ФИКС СТАТИЧНОГО СТАКАНА МОБОВ (БЕЗ ШВЫРЯНИЯ ОБ СТЕНЫ)
+                            -- НАДЁЖНЫЙ ФИКС СТЯГИВАНИЯ (Исправлено свойство .Name объектов в папке Enemies)
                             local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
                             for _, obj in pairs(enemyFolder:GetChildren()) do
                                 if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
                                     obj.HumanoidRootPart.CanCollide = false
-                                    obj.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Обнуляем скорость
-                                    obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame -- Притягиваем строго в кучу
+                                    obj.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Мягкое обнуление импульса
+                                    obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame -- Склеивание пачки в одну точку
                                 end
                             end
                             task.wait()
                         end
                     else
-                        -- Спот пуст, взлетаем над зданиями караулить спавн Isle Outlaw
+                        -- Если мобов на споте временно нет, летим на точку спавна караулить их
                         SecureTeleport(CFrame.new(-16450, 45, -15220))
                     end
                 end
@@ -337,4 +339,4 @@ end)
 tabsList.page.Visible = true
 tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Сборка v5.0 успешно запущена в Xeno!")
+print("[ATERNITY] Релиз сборки v5.5 полностью запущен!")
