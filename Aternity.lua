@@ -1,49 +1,48 @@
 --======================================================================--
---                       ATERNITY HUB — STEP 1: STEALTH UI ENGINE       --
+--                       ATERNITY HUB — STEP 1-3: OBSIDIAN CORE ENGINE  --
 --======================================================================--
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
--- Глобальное хранилище конфигурации софта
+-- 1. ГЛОБАЛЬНАЯ КОНФИГУРАЦИЯ ФЛАГОВ СОФТА
 getgenv().AternityConfig = {
     AutoFarm = false, FastAttack = false, AutoClick = false, AutoChest = false,
     AutoStats = false, SelectedStat = "Melee", SelectedWeapon = "Blox Fruit",
-    FlightSpeed = 280, VisualESP = false, AntiServerLag = true, SafeMode = true
+    FlightSpeed = 280, VisualESP = false
 }
 
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- 1. ЭКРАННЫЙ КОНТЕЙНЕР
+-- 2. ЭКРАННЫЙ КОНТЕЙНЕР ДЛЯ СБОРКИ UI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AternityStealthX"
+ScreenGui.Name = "AternityObsidianX"
 ScreenGui.ResetOnSpawn = false
 if gethui then ScreenGui.Parent = gethui() else ScreenGui.Parent = game:GetService("CoreGui") end
 
--- 2. ГЛАВНОЕ ОКНО ИНТЕРФЕЙСА (Строгий матовый стиль Dark Obsidian)
+-- 3. ГЛАВНОЕ ОКНО ИНТЕРФЕЙСА (Строгий матовый стиль Dark Obsidian)
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 550, 0, 380)
-MainFrame.Position = UDim2.new(0.5, -275, 0.5, -190)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 27) -- Глубокий матовый темный
+MainFrame.Size = UDim2.new(0, 540, 0, 370)
+MainFrame.Position = UDim2.new(0.5, -270, 0.5, -185)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
 MainFrame.Active = true
 MainFrame.ZIndex = 1
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
 
--- Строгая, тонкая темно-серая разграничительная рамка (Вместо неона)
+-- Тонкая серая рамка
 local FrameStroke = Instance.new("UIStroke", MainFrame)
 FrameStroke.Thickness = 1
 FrameStroke.Color = Color3.fromRGB(45, 48, 58)
 FrameStroke.ApplyStrokeMode = Enum.StrokeMode.Border
 
--- 3. ВЕРХНЯЯ ПАНЕЛЬ УПРАВЛЕНИЯ (Header)
+-- 4. ВЕРХНЯЯ ПАНЕЛЬ С УПРАВЛЕНИЕМ (Header)
 local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 42)
-Header.BackgroundColor3 = Color3.fromRGB(26, 29, 36) -- Чуть светлее основы для объема
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundColor3 = Color3.fromRGB(26, 29, 36)
 Header.BorderSizePixel = 0
 Header.ZIndex = 2
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 6)
@@ -55,48 +54,22 @@ HeaderLine.BackgroundColor3 = Color3.fromRGB(40, 44, 54)
 HeaderLine.BorderSizePixel = 0
 HeaderLine.ZIndex = 3
 
--- Заголовок софта (Мягкий белый цвет текста)
+-- Текст заголовка
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0, 200, 1, 0)
-Title.Position = UDim2.new(0, 16, 0, 0)
+Title.Size = UDim2.new(1, -50, 1, 0)
+Title.Position = UDim2.new(0, 14, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY OVERLORD"
+Title.Text = "ATERNITY OVERLORD v12.5"
 Title.TextColor3 = Color3.fromRGB(240, 242, 245)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 13
+Title.TextSize = 12
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.ZIndex = 3
 
--- Датчик производительности (FPS и Пинг)
-local InfoLabel = Instance.new("TextLabel", Header)
-InfoLabel.Size = UDim2.new(0, 150, 1, 0)
-InfoLabel.Position = UDim2.new(1, -210, 0, 0)
-InfoLabel.BackgroundTransparency = 1
-InfoLabel.Text = "FPS: -- | PING: --"
-InfoLabel.TextColor3 = Color3.fromRGB(110, 115, 125)
-InfoLabel.Font = Enum.Font.GothamSemibold
-InfoLabel.TextSize = 10
-InfoLabel.TextXAlignment = Enum.TextXAlignment.Right
-InfoLabel.ZIndex = 3
-
-task.spawn(function()
-    local lastTime = os.clock()
-    local frameCount = 0
-    RunService.Heartbeat:Connect(function()
-        frameCount = frameCount + 1
-        if os.clock() - lastTime >= 1 then
-            local ping = tonumber(string.format("%.0f", LocalPlayer:GetNetworkPing() * 1000)) or 0
-            InfoLabel.Text = "FPS: " .. frameCount .. " | PING: " .. ping .. "ms"
-            frameCount = 0
-            lastTime = os.clock()
-        end
-    end)
-end)
-
--- Строгая кнопка закрытия
+-- Кнопка закрытия
 local ToggleKeyBtn = Instance.new("TextButton", Header)
 ToggleKeyBtn.Size = UDim2.new(0, 24, 0, 24)
-ToggleKeyBtn.Position = UDim2.new(1, -38, 0, 9)
+ToggleKeyBtn.Position = UDim2.new(1, -36, 0, 8)
 ToggleKeyBtn.BackgroundColor3 = Color3.fromRGB(38, 42, 53)
 ToggleKeyBtn.Text = "×"
 ToggleKeyBtn.TextColor3 = Color3.fromRGB(200, 205, 215)
@@ -111,7 +84,7 @@ ToggleKeyBtn.Activated:Connect(function()
     MainFrame.Visible = not uiClosed
 end)
 
--- Плавное и точное перетаскивание за шапку
+-- Плавный драггинг
 local dragToggle, dragStart, startPos
 Header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -132,45 +105,14 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
-print("[ATERNITY STEP 1] Строгое Obsidian-ядро успешно развернуто.")
---======================================================================--
---                       ATERNITY HUB — STEP 2: FIX LOGIC & SIDEBAR     --
---======================================================================--
-
--- 1. СТАБИЛЬНЫЙ ПЕРЕХВАТ ПИНГА И FPS ЧЕРЕЗ СЛУЖБУ СТАТИСТИКИ ROBLOX
-task.spawn(function()
-    local lastTime = os.clock()
-    local frameCount = 0
-    local statsService = game:GetService("Stats")
-    
-    RunService.Heartbeat:Connect(function()
-        frameCount = frameCount + 1
-        if os.clock() - lastTime >= 1 then
-            pcall(function()
-                -- Метод прямого чтения сетевого пинга из системного коннекта
-                local networkStats = statsService:FindFirstChild("Network")
-                local ping = networkStats and math.floor(networkStats.ServerPing.Value) or 0
-                
-                -- Запись стабильных значений в текстовое поле хедера
-                if InfoLabel then
-                    InfoLabel.Text = "FPS: " .. frameCount .. " | PING: " .. ping .. "ms"
-                end
-            end)
-            frameCount = 0
-            lastTime = os.clock()
-        end
-    end)
-end)
-
--- 2. СТРОГАЯ МАТОВАЯ ЛЕВАТЯ ПАНЕЛЬ НАВИГАЦИИ (Sidebar)
+-- 5. БОКОВАЯ ПАНЕЛЬ НАВИГАЦИИ (Sidebar)
 local Sidebar = Instance.new("Frame", MainFrame)
-Sidebar.Size = UDim2.new(0, 140, 1, -42)
-Sidebar.Position = UDim2.new(0, 0, 0, 42)
-Sidebar.BackgroundColor3 = Color3.fromRGB(15, 17, 22) -- Более темный матовый тон для контраста
+Sidebar.Size = UDim2.new(0, 135, 1, -40)
+Sidebar.Position = UDim2.new(0, 0, 0, 40)
+Sidebar.BackgroundColor3 = Color3.fromRGB(15, 17, 22)
 Sidebar.BorderSizePixel = 0
 Sidebar.ZIndex = 2
 
--- Правая разделительная линия для боковой панели
 local SidebarLine = Instance.new("Frame", Sidebar)
 SidebarLine.Size = UDim2.new(0, 1, 1, 0)
 SidebarLine.Position = UDim2.new(1, -1, 0, 0)
@@ -178,20 +120,73 @@ SidebarLine.BackgroundColor3 = Color3.fromRGB(40, 44, 54)
 SidebarLine.BorderSizePixel = 0
 SidebarLine.ZIndex = 3
 
--- Автоматический список для вертикального выстраивания строгого меню вкладок
 local SideLayout = Instance.new("UIListLayout", Sidebar)
 SideLayout.Padding = UDim.new(0, 5)
 SideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 SideLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 local SidePadding = Instance.new("UIPadding", Sidebar)
-SidePadding.PaddingTop = UDim.new(0, 12)
+SidePadding.PaddingTop = UDim.new(0, 10)
 
--- 3. ПРАВЫЙ ОСНОВНОЙ КОНТЕЙНЕР ДЛЯ СТРАНИЦ С ФУНКЦИЯМИ
+-- 6. ОСНОВНОЙ КОНТЕЙНЕР ДЛЯ РАЗМЕЩЕНИЯ СТРАНИЦ ФУНКЦИЙ
 local Container = Instance.new("Frame", MainFrame)
-Container.Size = UDim2.new(1, -152, 1, -52)
-Container.Position = UDim2.new(0, 146, 0, 47)
+Container.Size = UDim2.new(1, -145, 1, -50)
+Container.Position = UDim2.new(0, 140, 0, 45)
 Container.BackgroundTransparency = 1
 Container.ZIndex = 2
 
-print("[ATERNITY STEP 2] Навигационные панели Dark Obsidian развернуты. Счетчики запущены.")
+local tabsList = {}
+
+-- Фабрика кастомных матовых страниц
+local function AddTab(name)
+    local TabPage = Instance.new("ScrollingFrame", Container)
+    TabPage.Size = UDim2.new(1, 0, 1, 0)
+    TabPage.BackgroundTransparency = 1
+    TabPage.Visible = false
+    TabPage.CanvasSize = UDim2.new(0, 0, 0, 500)
+    TabPage.ScrollBarThickness = 2
+    TabPage.ScrollBarImageColor3 = Color3.fromRGB(55, 60, 75)
+    TabPage.ZIndex = 3
+    
+    local PageLayout = Instance.new("UIListLayout", TabPage)
+    PageLayout.Padding = UDim.new(0, 6)
+    PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    
+    local TabButton = Instance.new("TextButton", Sidebar)
+    TabButton.Size = UDim2.new(0, 120, 0, 32)
+    TabButton.BackgroundColor3 = Color3.fromRGB(24, 27, 35)
+    TabButton.Text = "  " .. name
+    TabButton.TextColor3 = Color3.fromRGB(150, 155, 165)
+    TabButton.Font = Enum.Font.GothamSemibold
+    TabButton.TextSize = 11
+    TabButton.TextXAlignment = Enum.TextXAlignment.Left
+    TabButton.ZIndex = 3
+    Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 4)
+    
+    TabButton.Activated:Connect(function()
+        for _, tab in pairs(tabsList) do
+            tab.page.Visible = false
+            tab.btn.BackgroundColor3 = Color3.fromRGB(24, 27, 35)
+            tab.btn.TextColor3 = Color3.fromRGB(150, 155, 165)
+        end
+        TabPage.Visible = true
+        TabButton.BackgroundColor3 = Color3.fromRGB(38, 42, 53)
+        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end)
+    
+    table.insert(tabsList, {page = TabPage, btn = TabButton})
+    if #tabsList == 1 then
+        TabPage.Visible = true
+        TabButton.BackgroundColor3 = Color3.fromRGB(38, 42, 53)
+        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end
+    return TabPage
+end
+
+-- СИСТЕМНАЯ РЕГИСТРАЦИЯ ВКЛАДОК МЕНЮ
+local FarmPage = AddTab("Main Farm")
+local CombatPage = AddTab("Combat Core")
+local TeleportPage = AddTab("Teleports")
+local SettingsPage = AddTab("Settings")
+
+print("[ATERNITY STEP 3] Панель, вкладки и Хедер полностью прогружены без лагов.")
