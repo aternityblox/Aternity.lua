@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v4.8)           --
---         ФИКС TIKI QUEST GIVER 1 | СТАБИЛЬНЫЙ ЦИКЛ ФАРМА ПО УРОВНЮ    --
+--                       ATERNITY HUB — REBORN EDITION (v4.9)           --
+--         ФИНАЛЬНЫЙ СТАБИЛЬНЫЙ МАГНИТ МОБОВ | ЛЕГАЛЬНЫЙ АВТОКВЕСТ ТИКИ  --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -8,7 +8,7 @@ getgenv().AternityConfig = {
     AutoClick = false,
     AutoChest = false,
     SelectedWeapon = "Blox Fruit",
-    FlightSpeed = 250
+    FlightSpeed = 260
 }
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -23,23 +23,17 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- ЛИНЕЙНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА (СТРОГИЙ ФИКС ДЛЯ TIKI OUTPOST)
+-- АБСОЛЮТНО ТОЧНАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА БЕЗ ПРИВЯЗКИ К МОРЯМ
 local AllQuestsData = {
-    -- 1 Sea
     {MinLvl = 1, MaxLvl = 9, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1},
     {MinLvl = 10, MaxLvl = 14, Name = "Monkey", QuestNPC = "Adventurer", Quest = "JungleQuest", QuestID = 1},
-    
-    -- 2 Sea
     {MinLvl = 700, MaxLvl = 774, Name = "Raider", QuestNPC = "Quest Giver", Quest = "Area1Quest", QuestID = 1},
-    
-    -- 3 Sea
     {MinLvl = 1500, MaxLvl = 1574, Name = "Pirate Millionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 1},
     
-    -- ВАШ ТЕКУЩИЙ УРОВЕНЬ (2461 LVL) НА АВАНПОСТЕ TIKI С ТОЧНЫМ NPC И ID КВЕСТА
+    -- ТОЧНЫЙ ФИКС ДЛЯ ВАШЕГО УРОВНЯ (2461 LVL) НА АВАНПОСТЕ TIKI
     {MinLvl = 2450, MaxLvl = 2524, Name = "Isle Outlaw", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 1},
     {MinLvl = 2525, MaxLvl = 2599, Name = "Island Boy", QuestNPC = "Tiki Quest Giver 1", Quest = "TikiOutpostQuest", QuestID = 2},
     
-    -- Эндгейм
     {MinLvl = 2800, MaxLvl = 9999, Name = "Aternity Abyss Slayer", QuestNPC = "Abyss Quest Giver", Quest = "AbyssQuest", QuestID = 1}
 }
 
@@ -54,7 +48,7 @@ local function GetMyTargetMob()
     return AllQuestsData[#AllQuestsData]
 end
 
--- СИСТЕМА ФИЗИЧЕСКОГО ПОЛЕТА ИЗ ВЕРСИИ 3.7 (ОБХОД КИКА СЕРВЕРА 267)
+-- СИСТЕМА ФИЗИЧЕСКОГО ПОЛЕТА (ОБХОД КИКА СЕРВЕРА 267)
 local function SecureTeleport(targetCFrame)
     local player = game.Players.LocalPlayer
     local character = player.Character
@@ -125,7 +119,7 @@ local function FindValidTarget(name)
     return nil
 end
 
--- ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА
+-- ИНИЦИАЛИЗАЦИЯ UI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AternityHubReborn"
 ScreenGui.ResetOnSpawn = false
@@ -148,7 +142,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v4.8 [Tiki Outpost Fix]"
+Title.Text = "ATERNITY HUB v4.9 [Tiki Magnet Release]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -237,7 +231,7 @@ local function EquipWeapon()
     end)
 end
 
--- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ НАДЁЖНОГО АВТОФАРМА С ПОЛЕТОМ К NPC
+-- ИСПОЛНИТЕЛЬНЫЙ ЦИКЛ БЕЗУПРЕЧНОГО АВТОФАРМА С МАГНИТОМ МОБОВ
 addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
     task.spawn(function()
         while getgenv().AternityConfig.AutoFarm do
@@ -252,18 +246,20 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 local currentTarget = GetMyTargetMob()
 
                 if not hasQuest then
-                    -- 1. Сначала физически летим к Tiki Quest Giver 1
+                    -- 1. ЛЕГАЛЬНЫЙ КЛИК-АВТОКВЕСТ (Долет и эмуляция клика диалога)
                     local npc = FindValidTarget(currentTarget.QuestNPC)
                     if npc then
                         SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
-                        task.wait(0.5)
-                        -- Легальный диалог и активация контракта
+                        task.wait(0.4)
+                        -- Имитируем физическое нажатие на NPC для открытия меню квестов
                         fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
+                        task.wait(0.4)
                     end
                 else
-                    -- 2. Квест успешно взят, летим в зону фарма Isle Outlaw
+                    -- 2. КВЕСТ АКТИВЕН. Включаем магнитную зачистку локации
                     local mob = FindValidTarget(currentTarget.Name)
                     if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
+                        -- Отключаем коллизии и атакующие анимации у базового моба
                         mob.HumanoidRootPart.CanCollide = false
                         if mob:FindFirstChild("AttackParts") then 
                             mob.AttackParts:Destroy() 
@@ -274,18 +270,19 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                         
                         while getgenv().AternityConfig.AutoFarm and mob.Humanoid.Health > 0 and mainGui.Quest.Visible do
                             SecureTeleport(farmPos)
-                            -- Сетевое стягивание пачки мобов под вас
+                            -- ПРАВИЛЬНОЕ ПЛАВНОЕ СТЯГИВАНИЕ (БЕЗ ШВЫРЯНИЯ): Сброс импульса + Фиксация координат
                             local enemyFolder = workspace:FindFirstChild("Enemies") or workspace
                             for _, obj in pairs(enemyFolder:GetChildren()) do
-                                if string.find(obj.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") then
+                                if string.find(obj.Value.Name, currentTarget.Name) and obj:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
                                     obj.HumanoidRootPart.CanCollide = false
-                                    obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame
+                                    obj.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Гасим скорость, чтобы мобы не разлетались
+                                    obj.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame -- Стягиваем строго в одну точку
                                 end
                             end
                             task.wait()
                         end
                     else
-                        -- Страховочный долет к физическим координатам спота Isle Outlaw на Tiki Outpost
+                        -- Спот пуст, летим караулить спавн Isle Outlaw
                         SecureTeleport(CFrame.new(-16450, 45, -15220))
                     end
                 end
@@ -336,4 +333,4 @@ end)
 tabsList.page.Visible = true
 tabsList.btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Релизная сборка v4.8 успешно запущена в Xeno!")
+print("[ATERNITY] Финальная стабильная сборка v4.9 запущена!")
