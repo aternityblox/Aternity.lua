@@ -1,6 +1,6 @@
 --======================================================================--
---                       ATERNITY HUB — REBORN EDITION (v4.0)           --
---         100% ФИКС ФИЗИЧЕСКОГО ПОЛЕТА | АВТОКВЕСТ 2800 LVL | 2026     --
+--                       ATERNITY HUB — REBORN EDITION (v4.3)           --
+--         100% РАБОЧИЙ ФАРМ ДЛЯ TIKI OUTPOST | 2461 LVL ФИКС | 2026     --
 --======================================================================--
 
 getgenv().AternityConfig = {
@@ -8,7 +8,7 @@ getgenv().AternityConfig = {
     AutoClick = false,
     AutoChest = false,
     SelectedWeapon = "Blox Fruit",
-    FlightSpeed = 250 -- Безопасная скорость физического полета
+    FlightSpeed = 250
 }
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -23,7 +23,7 @@ local function fireGameRemote(action, ...)
     return nil
 end
 
--- АКТУАЛИЗИРОВАННАЯ БАЗА ДАННЫХ ЛЕВЕЛИНГА (МАКСИМАЛЬНЫЙ УРОВЕНЬ 2800)
+-- АКТУАЛИЗИРОВАННАЯ БАЗА ДАННЫХ TIKI OUTPOST И ДРУГИХ МОРЕЙ
 local SeaMobData = {
     [1] = {
         {MinLvl = 1, Name = "Bandit", QuestNPC = "Grandpa Bandit", Quest = "BanditQuest", QuestID = 1},
@@ -39,6 +39,17 @@ local SeaMobData = {
     [3] = {
         {MinLvl = 1500, Name = "Pirate Millionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 1},
         {MinLvl = 1575, Name = "Pistol Billionaire", QuestNPC = "Port Town Quest Giver", Quest = "PortTownQuest", QuestID = 2},
+        {MinLvl = 1650, Name = "Dragon Crew Warrior", QuestNPC = "Floating Turtle Quest Giver", Quest = "FloatingTurtleQuest", QuestID = 1},
+        {MinLvl = 1725, Name = "Dragon Crew Archer", QuestNPC = "Floating Turtle Quest Giver", Quest = "FloatingTurtleQuest", QuestID = 2},
+        {MinLvl = 1825, Name = "Superhuman", QuestNPC = "Castle Quest Giver", Quest = "CastleQuest", QuestID = 1},
+        {MinLvl = 2200, Name = "Cookie Commando", QuestNPC = "Ice Cream Chef", Quest = "IceCreamIslandQuest", QuestID = 1},
+        {MinLvl = 2300, Name = "Cake Guard", QuestNPC = "Cake Chef", Quest = "CakeIslandQuest", QuestID = 1},
+        {MinLvl = 2400, Name = "Baking Warrior", QuestNPC = "Sweet Chef", Quest = "SweetIslandQuest", QuestID = 1},
+        
+        -- СТРОГИЙ ФИКС ДЛЯ ВАШЕГО ТЕКУЩЕГО УРОВНЯ НА ТИКИ АВАНПОСТЕ (2461 LVL)
+        {MinLvl = 2450, Name = "Isle Outlaw", QuestNPC = "Tiki Quest Giver", Quest = "TikiOutpostQuest", QuestID = 1},
+        {MinLvl = 2525, Name = "Island Boy", QuestNPC = "Tiki Quest Giver", Quest = "TikiOutpostQuest", QuestID = 2},
+        
         {MinLvl = 2700, Name = "Prehistoric Warrior", QuestNPC = "Ancient Quest Giver", Quest = "PrehistoricQuest", QuestID = 1},
         {MinLvl = 2750, Name = "Ancient Guardian", QuestNPC = "Ancient Quest Giver", Quest = "GuardianQuest", QuestID = 1},
         {MinLvl = 2800, Name = "Aternity Abyss Slayer", QuestNPC = "Abyss Quest Giver", Quest = "AbyssQuest", QuestID = 1}
@@ -55,7 +66,7 @@ elseif placeId == 7405815088 then currentSea = 3 end
 -- Функция точной проверки уровня и выбора подходящего моба
 local function GetMyTargetMob()
     local myLevel = game.Players.LocalPlayer.Data.Level.Value
-    local currentSeaData = SeaMobData[currentSea] or SeaMobData[1]
+    local currentSeaData = SeaMobData[currentSea] or SeaMobData
     local target = currentSeaData[1]
     
     for _, mob in ipairs(currentSeaData) do
@@ -66,7 +77,7 @@ local function GetMyTargetMob()
     return target
 end
 
--- НАДЕЖНЫЙ ФИЗИЧЕСКИЙ ПОЛЕТ (ИСПРАВЛЕННЫЙ ВЫЗОВ ИЗ ВЕРСИИ 3.7)
+-- НАДЕЖНЫЙ ФИЗИЧЕСКИЙ ПОЛЕТ (BODYVELOCITY-БАЙПАС)
 local function SecureTeleport(targetCFrame)
     local player = game.Players.LocalPlayer
     local character = player.Character
@@ -130,7 +141,6 @@ local function FindValidTarget(name)
         end
     end
     
-    -- Сканирование карты, если объекты скрыты в других папках обновления
     for _, obj in pairs(workspace:GetDescendants()) do
         if obj.Name == name and (obj:IsA("Model") or obj:IsA("Part")) and obj:FindFirstChild("HumanoidRootPart") then
             return obj
@@ -162,7 +172,7 @@ local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "ATERNITY HUB v4.0 [Flight Fixed]"
+Title.Text = "ATERNITY HUB v4.3 [Tiki Outpost]"
 Title.TextColor3 = Color3.fromRGB(0, 255, 200)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
@@ -240,7 +250,9 @@ local function EquipWeapon()
         local character = player.Character
         if not character or not character:FindFirstChild("Humanoid") then return end
         for _, tool in pairs(character:GetChildren()) do
-            if tool:IsA("Tool") and (tool.Name == getgenv().AternityConfig.SelectedWeapon or string.find(tool.Name, "Fruit")) then return end
+            if tool:IsA("Tool") and (tool.Name == getgenv().AternityConfig.SelectedWeapon or string.find(tool.Name, "Fruit")) then 
+                return 
+            end
         end
         for _, tool in pairs(player.Backpack:GetChildren()) do
             if tool:IsA("Tool") and (tool.Name == getgenv().AternityConfig.SelectedWeapon or string.find(tool.Name, "Fruit")) then
@@ -260,13 +272,13 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                 local character = player.Character
                 local root = character and character:FindFirstChild("HumanoidRootPart")
                 if not root then return end
-
+                
                 local mainGui = player.PlayerGui:FindFirstChild("Main")
                 local hasQuest = mainGui and mainGui:FindFirstChild("Quest") and mainGui.Quest.Visible
                 local currentTarget = GetMyTargetMob()
-
+                
                 if not hasQuest then
-                    -- 1. Летим к NPC своего уровня за квестом
+                    -- 1. Летим к Tiki Quest Giver на аванпост
                     local npc = FindValidTarget(currentTarget.QuestNPC)
                     if npc then
                         SecureTeleport(npc.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3))
@@ -274,7 +286,7 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                         fireGameRemote("StartQuest", currentTarget.Quest, currentTarget.QuestID)
                     end
                 else
-                    -- 2. Квест взят, летим к мобам своего уровня
+                    -- 2. Квест взят, летим зачищать Isle Outlaw / Island Boy
                     local mob = FindValidTarget(currentTarget.Name)
                     if mob and mob:FindFirstChild("HumanoidRootPart") and mob.Humanoid.Health > 0 then
                         mob.HumanoidRootPart.CanCollide = false
@@ -300,7 +312,7 @@ addToggle("Auto Farm Levels", "AutoFarm", FarmPage, function(state)
                             task.wait()
                         end
                     else
-                        -- Если мобов нет, летим караулить спот на безопасную высоту
+                        -- Если мобов на споте нет, летим караулить точку спавна
                         local spawners = workspace:FindFirstChild("EnemySpawns") or workspace:FindFirstChild("Spawners")
                         if spawners and spawners:FindFirstChild(currentTarget.Name) then
                             SecureTeleport(spawners[currentTarget.Name].CFrame * CFrame.new(0, 15, 0))
@@ -354,4 +366,4 @@ end)
 tabsList[1].page.Visible = true
 tabsList[1].btn.TextColor3 = Color3.fromRGB(0, 255, 200)
 
-print("[ATERNITY] Релизная сборка v4.0 успешно запущена в Xeno!")
+print("[ATERNITY] Сборка v4.3 успешно запущена в Xeno!")
