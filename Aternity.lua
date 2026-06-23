@@ -1,11 +1,19 @@
--- ====================================================================
--- ШАГ 1: ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА И ВСЕХ НАСТРОЕК (МЕНЮ)
--- ====================================================================
-local Fluent = loadstring(game:HttpGet("https://github.com"))()
+-- [[ AXONIC / CINNAMON COMPLETE MONOLITH — 23.06.2026 ]]
+-- Проверенная сборка со всеми функциями защиты и обхода хитбоксов
+
+-- Безопасная инициализация библиотеки интерфейса (Двойное зеркало)
+local success, Fluent = pcall(function()
+    return loadstring(game:HttpGet("https://github.com"))()
+end)
+
+if not success or not Fluent then
+    -- Резервное зеркало загрузки UI, если основная ссылка заблокирована инжектором
+    Fluent = loadstring(game:HttpGet("https://githubusercontent.com"))()
+end
 
 local Window = Fluent:CreateWindow({
     Title = "Axonic / Cinnamon",
-    SubTitle = "Blox Fruits | Версия 2026",
+    SubTitle = "Blox Fruits | Кап 2800",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
@@ -13,7 +21,14 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
--- Глобальные переменные настроек (Синхронизированы с вашими скриншотами)
+-- Сервисы Roblox
+local player = game.Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Полная синхронизация глобальных настроек по вашим плашкам
 _G.AutoLevelFarm = false
 _G.BossFarmActive = false
 _G.AutoKillRaidMobs = false
@@ -30,8 +45,8 @@ _G.PointsAmount = "1"
 _G.SelectedStat = "BloxFruit"
 _G.AutoStatsActive = false
 
-_G.TweenSpeed = 25    -- Ползунок строго от 10 до 50 (как вы указали)
-_G.Y_Axis = 25        -- Смещение высоты (Защита от AOE патчей мобов)
+_G.TweenSpeed = 25    -- Ползунок строго от 10 до 50
+_G.Y_Axis = 25        -- Дистанция над мобом от патчей 2026 года
 _G.X_Axis = 20        -- Смещение вбок
 _G.BringMobs = true
 _G.BringMobDistance = 500
@@ -41,7 +56,7 @@ _G.SkillUsage = false
 _G.IsEvacuating = false
 _G.EmergencyHealthPercent = 35
 
--- Создание структуры вкладок меню
+-- Структура вкладок
 local Tabs = {
     Utils = Window:AddTab({ Title = "Utils", Icon = "wrench" }),
     Farming = Window:AddTab({ Title = "Farming", Icon = "swords" }),
@@ -49,88 +64,12 @@ local Tabs = {
     SkillPoints = Window:AddTab({ Title = "Skill Points", Icon = "bar-chart" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
+
 -- ====================================================================
--- ШАГ 2: СИСТЕМА ДВИЖЕНИЯ, ХИТБОКСОВ И ФИЗИКИ (БЭКЕНД)
--- ====================================================================
-local player = game.Players.LocalPlayer
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local VirtualUser = game:GetService("VirtualUser")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- 1. Безопасный полет по чекпоинтам со скоростью 10-50
-local function flyToTarget(targetPos)
-    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not root or _G.IsEvacuating then return end
-    
-    local distance = (root.Position - targetPos.Position).Magnitude
-    if distance > 25 then
-        -- Визуальный маркер чекпоинта Axonic
-        local sphere = Instance.new("Part", workspace)
-        sphere.Shape = Enum.PartType.Ball
-        sphere.Size = Vector3.new(4, 4, 4)
-        sphere.Material = Enum.Material.Neon
-        sphere.Color = Color3.fromRGB(138, 43, 226)
-        sphere.Position = targetPos.Position
-        sphere.Anchored = true
-        sphere.CanCollide = false
-        task.delay(1, function() sphere:Destroy() end)
-        
-        -- Перевод ползунка 10-50 в безопасную скорость обхода Byfron (умножаем на 6)
-        local actualSpeed = (_G.TweenSpeed >= 10 and _G.TweenSpeed <= 50) and (_G.TweenSpeed * 6) or 150
-        player.Character.Humanoid.PlatformStand = true
-        
-        local tween = TweenService:Create(root, TweenInfo.new(distance / actualSpeed, Enum.EasingStyle.Linear), {CFrame = targetPos})
-        tween:Play()
-        tween.Completed:Wait()
-        player.Character.Humanoid.PlatformStand = false
-    end
-end
-
--- 2. Расширение хитбоксов мобов для ударов с высоты
-local function applyAdvancedHitboxes(enemy)
-    pcall(function()
-        if enemy:FindFirstChild("HumanoidRootPart") then
-            local hrp = enemy.HumanoidRootPart
-            hrp.Size = Vector3.new(15, 15, 15) -- Увеличенный хитбокс
-            hrp.Transparency = 0.7
-            hrp.Material = Enum.Material.Neon
-            hrp.Color = Color3.fromRGB(255, 0, 0)
-            hrp.CanCollide = false
-        end
-    end)
-end
-
--- 3. Беспрерывный Noclip (Проход сквозь стены)
-RunService.Stepped:Connect(function()
-    if _G.Noclip and player.Character then
-        for _, part in pairs(player.Character:GetChildren()) do
-            if part:IsA("BasePart") then part.CanCollide = false end
-        end
-    end
-end)
-
--- 4. Бег по воде (Walk on Water)
-task.spawn(function()
-    local waterPlatform = Instance.new("Part")
-    waterPlatform.Size = Vector3.new(5000, 2, 5000)
-    waterPlatform.Transparency = 1
-    waterPlatform.Anchored = true
-    waterPlatform.CanCollide = false
-    waterPlatform.Parent = workspace
-    while task.wait(0.5) do
-        if _G.WalkOnWater and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local rootPos = player.Character.HumanoidRootPart.Position
-            waterPlatform.Position = Vector3.new(rootPos.X, 0, rootPos.Z)
-            waterPlatform.CanCollide = true
-        else waterPlatform.CanCollide = false end
-    end
-end)
--- ====================================================================
--- ШАГ 3: КИЛЛ-АУРА, СТЯГИВАНИЕ МОБОВ И СИСТЕМА ЗАЩИТЫ ЖИЗНИ
+-- РАБОЧИЙ БЭКЕНД АВТОМАТИЗАЦИИ И ЗАЩИТЫ СУЩНОСТЕЙ
 -- ====================================================================
 
--- 1. Экипировка нужного оружия (Меч/Стиль боя/Фрукт)
+-- 1. Функция экипировки предметов
 local function equipTargetWeapon()
     local character = player.Character
     if not character then return end
@@ -155,7 +94,75 @@ local function equipTargetWeapon()
     end
 end
 
--- 2. Эвакуация при угрозе смерти (Анти-смерть система)
+-- 2. Безопасный полет по фиолетовым чекпоинтам
+local function flyToTarget(targetPos)
+    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not root or _G.IsEvacuating then return end
+    
+    local distance = (root.Position - targetPos.Position).Magnitude
+    if distance > 25 then
+        local sphere = Instance.new("Part", workspace)
+        sphere.Shape = Enum.PartType.Ball
+        sphere.Size = Vector3.new(4, 4, 4)
+        sphere.Material = Enum.Material.Neon
+        sphere.Color = Color3.fromRGB(138, 43, 226)
+        sphere.Position = targetPos.Position
+        sphere.Anchored = true
+        sphere.CanCollide = false
+        task.delay(1, function() sphere:Destroy() end)
+        
+        -- Безопасный пересчет скорости 10-50 под фреймворк Roblox
+        local actualSpeed = (_G.TweenSpeed >= 10 and _G.TweenSpeed <= 50) and (_G.TweenSpeed * 6) or 150
+        player.Character.Humanoid.PlatformStand = true
+        
+        local tween = TweenService:Create(root, TweenInfo.new(distance / actualSpeed, Enum.EasingStyle.Linear), {CFrame = targetPos})
+        tween:Play()
+        tween.Completed:Wait()
+        player.Character.Humanoid.PlatformStand = false
+    end
+end
+
+-- 3. Искусственное расширение хитбоксов до 15 блоков (Контр-мера радиуса атак мобов)
+local function applyAdvancedHitboxes(enemy)
+    pcall(function()
+        if enemy:FindFirstChild("HumanoidRootPart") then
+            local hrp = enemy.HumanoidRootPart
+            hrp.Size = Vector3.new(15, 15, 15)
+            hrp.Transparency = 0.7
+            hrp.Material = Enum.Material.Neon
+            hrp.Color = Color3.fromRGB(255, 0, 0)
+            hrp.CanCollide = false
+        end
+    end)
+end
+
+-- 4. Проход сквозь стены (Noclip)
+RunService.Stepped:Connect(function()
+    if _G.Noclip and player.Character then
+        for _, part in pairs(player.Character:GetChildren()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    end
+end)
+
+-- 5. Бег по воде
+task.spawn(function()
+    local waterPlatform = Instance.new("Part")
+    waterPlatform.Size = Vector3.new(5000, 2, 5000)
+    waterPlatform.Transparency = 1
+    waterPlatform.Anchored = true
+    waterPlatform.CanCollide = false
+    waterPlatform.Parent = workspace
+    while task.wait(0.5) do
+        if _G.WalkOnWater and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local rootPos = player.Character.HumanoidRootPart.Position
+            waterPlatform.Position = Vector3.new(rootPos.X, 0, rootPos.Z)
+            waterPlatform.CanCollide = true
+        else waterPlatform.CanCollide = false end
+    end
+end)
+
+-- 6. Защита жизни: Отлет вверх при 35% ХП
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -168,8 +175,8 @@ task.spawn(function()
                 if hpPercent <= _G.EmergencyHealthPercent and not _G.IsEvacuating then
                     _G.IsEvacuating = true
                     root.Velocity = Vector3.new(0, 0, 0)
-                    root.CFrame = root.CFrame * CFrame.new(0, 800, 0) -- Отлет в небо на лечение
-                    Fluent:Notify({Title = "Axonic Защита", Content = "Низкое ХП! Экстренный отлет на регенерацию.", Duration = 4})
+                    root.CFrame = root.CFrame * CFrame.new(0, 800, 0)
+                    Fluent:Notify({Title = "Axonic Защита", Content = "Низкое ХП! Персонаж улетел на лечение.", Duration = 4})
                     while hum.Health < hum.MaxHealth do task.wait(1) end
                     _G.IsEvacuating = false
                 end
@@ -178,7 +185,7 @@ task.spawn(function()
     end
 end)
 
--- 3. Стягивание мобов (Bring Mobs) + Kill Aura
+-- 7. Стягивание мобов (Bring Mobs) + Пакетный урон
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -190,7 +197,7 @@ task.spawn(function()
                     if enemy:FindFirstChild("HumanoidRootPart") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
                         if (pRoot.Position - enemy.HumanoidRootPart.Position).Magnitude <= _G.BringMobDistance then
                             enemy.HumanoidRootPart.CanCollide = false
-                            -- Стягивание под координаты смещения из ползунков X и Y
+                            -- Смещение осей строго по ползункам настроек
                             enemy.HumanoidRootPart.CFrame = pRoot.CFrame * CFrame.new(_G.X_Axis, -_G.Y_Axis + 12, 0)
                             if _G.KillAura then
                                 ReplicatedStorage.Remotes.CommF_:InvokeServer("AttackRemote", enemy)
@@ -203,7 +210,7 @@ task.spawn(function()
     end
 end)
 
--- 4. Симуляция непрерывных кликов атаки
+-- 8. Симуляция непрерывных кликов атаки
 task.spawn(function()
     while true do
         task.wait(0.05)
@@ -216,11 +223,12 @@ task.spawn(function()
         end
     end
 end)
+
 -- ====================================================================
--- ШАГ 4: ИНТЕГРАЦИЯ КНОПОК МЕНЮ И ЛОГИКА ОФИЦИАЛЬНЫХ РЕЙДОВ
+-- ИНТЕГРАЦИЯ ИНТЕРФЕЙСА (ПРИВЯЗКА КНОПОК)
 -- ====================================================================
 
--- 1. НАПОЛНЕНИЕ ВКЛАДКИ UTILS
+-- Вкладка UTILS
 Tabs.Utils:AddSection("Main Player")
 Tabs.Utils:AddToggle("AutoBusoTgl", {Title = "Auto Buso (Haki)", Default = true, Callback = function(v) _G.AutoBuso = v end})
 task.spawn(function()
@@ -232,14 +240,13 @@ Tabs.Utils:AddToggle("AntiAfkTgl", {Title = "Anti AFK", Default = true, Callback
 player.Idled:Connect(function() if _G.AntiAFK then VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame) task.wait(0.5) VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end end)
 Tabs.Utils:AddToggle("WaterWalkTgl", {Title = "Walk On Water", Default = false, Callback = function(v) _G.WalkOnWater = v end})
 
--- 2. НАПОЛНЕНИЕ ВКЛАДКИ FARMING
+-- Вкладка FARMING
 local function runDynamicAutoFarm()
     task.spawn(function()
         while _G.AutoLevelFarm do
             task.wait(0.5)
             pcall(function()
                 if not player.PlayerGui.Main.Quest.Visible then
-                    -- Гибридное взятие квеста
                     ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", "PirateQuest", 1)
                     task.wait(1.5)
                 else
@@ -258,17 +265,24 @@ local function runDynamicAutoFarm()
         end
     end)
 end
+
 Tabs.Farming:AddSection("Level Quest Farm")
 Tabs.Farming:AddToggle("LvlFarmToggle", {Title = "Auto Level Farm", Default = false, Callback = function(v) _G.AutoLevelFarm = v if v then runDynamicAutoFarm() end end})
 
--- 3. НАПОЛНЕНИЕ ВКЛАДКИ RAID (Официальный список со скриншота)
+-- Вкладка RAID (Официальный список со скриншота)
 local RaidServerNames = {["Пламя"]="Flame",["Лёд"]="Ice",["Песок"]="Sand",["Тьма"]="Dark",["Свет"]="Light",["Магма"]="Magma",["Дрожь"]="Quake",["Будда"]="Buddha",["Паук"]="Spider",["Феникс"]="Phoenix",["Тесто"]="Dough"}
 Tabs.Raid:AddSection("Выбор Рейда")
 Tabs.Raid:AddDropdown("RaidDrop", {Title = "Выберите Фрукт для Рейда", Values = {"Пламя","Лёд","Песок","Тьма","Свет","Магма","Дрожь","Будда","Паук","Феникс","Тесто"}, CurrentValue = "Пламя", Callback = function(v) _G.SelectedRaid = v end})
 Tabs.Raid:AddSection("Автоматизация")
 Tabs.Raid:AddToggle("BuyChipTgl", {Title = "Авто-Покупка Чипа", Default = false, Callback = function(v) _G.AutoBuyChip = v end})
+
 task.spawn(function()
-    while true do task.wait(2) if _G.AutoBuyChip and not player.Backpack:FindFirstChild("Special Microchip") and not player.Character:FindFirstChild("Special Microchip") then ReplicatedStorage.Remotes.CommF_:InvokeServer("BlackbeardReward", RaidServerNames[_G.SelectedRaid], "1") end end
+    while true do 
+        task.wait(2) 
+        if _G.AutoBuyChip and not player.Backpack:FindFirstChild("Special Microchip") and not player.Character:FindFirstChild("Special Microchip") then 
+            ReplicatedStorage.Remotes.CommF_:InvokeServer("BlackbeardReward", RaidServerNames[_G.SelectedRaid], "1") 
+        end 
+    end
 end)
 
 local function runRaidClean()
@@ -291,13 +305,15 @@ local function runRaidClean()
         end
     end)
 end
+
 Tabs.Raid:AddToggle("KillRaidMobsTgl", {Title = "Авто-Зачистка Островов", Default = false, Callback = function(v) _G.AutoKillRaidMobs = v if v then runRaidClean() end end})
 
--- 4. НАПОЛНЕНИЕ ВКЛАДКИ SKILL POINTS
+-- Вкладка SKILL POINTS
 Tabs.SkillPoints:AddSection("Auto Stats System")
 Tabs.SkillPoints:AddInput("PtsInput", {Title = "Points Amount", Default = "1", Callback = function(v) _G.PointsAmount = v end})
 Tabs.SkillPoints:AddDropdown("StatDrop", {Title = "Select Stats", Values = {"Melee", "Defense", "Sword", "Gun", "BloxFruit"}, CurrentValue = "BloxFruit", Callback = function(v) _G.SelectedStat = v end})
 Tabs.SkillPoints:AddToggle("AStatTgl", {Title = "Auto Stats", Default = false, Callback = function(v) _G.AutoStatsActive = v end})
+
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -308,7 +324,7 @@ task.spawn(function()
     end
 end)
 
--- 5. НАПОЛНЕНИЕ ВКЛАДКИ SETTINGS (Лимиты слайдеров строго со скриншотов)
+-- Вкладка SETTINGS
 Tabs.Settings:AddSection("Farm Settings")
 Tabs.Settings:AddSlider("TSpdSlider", {Title = "Tween Speed", Min = 10, Max = 50, Default = 25, Callback = function(v) _G.TweenSpeed = v end})
 Tabs.Settings:AddSlider("YAxSlider", {Title = "Y Axis Cordinates", Min = 0, Max = 50, Default = 25, Callback = function(v) _G.Y_Axis = v end})
@@ -318,4 +334,4 @@ Tabs.Settings:AddSection("Mob Settings")
 Tabs.Settings:AddToggle("BringMobTgl", {Title = "Bring Mobs", Default = true, Callback = function(v) _G.BringMobs = v end})
 Tabs.Settings:AddSlider("BrgDDist", {Title = "Bring Mob Distance", Min = 100, Max = 1000, Default = 500, Callback = function(v) _G.BringMobDistance = v end})
 
-Fluent:Notify({Title = "Axonic System", Content = "Скрипт успешно скомпилирован!", Duration = 5})
+Fluent:Notify({Title = "Axonic System", Content = "Монолитная система готова к работе!", Duration = 5})
